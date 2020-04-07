@@ -1,3 +1,8 @@
+.vscode
+bot.db
+config.json
+
+## For Python
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -3,6 +3,7 @@ import asyncio
 
 from db import BotDB
 from userlist import Userlist, User
+from chatcommands import RollCommand
 
 class Event:
     def __init__(self):
@@ -42,6 +43,7 @@ class Bot:
         self.on('usercount', self.db.log_usercount)
         self.on('userlist', self.userlist.load_from_userlist)
         self.on('userLeave', self.userlist.on_user_leave)
+        self.on('chatMsg', RollCommand(self).on_chat_message)
 
     def on(self, event, handler):
         #handler needs to be async

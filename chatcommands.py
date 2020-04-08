@@ -7,7 +7,7 @@ class ChatCommand:
         self.bot = bot
         self.command_name = '' #e.g. $roll
         self.min_rank = 1
-        self.user_cooldown = dt.timedelta(seconds=60)
+        self.user_cooldown = dt.timedelta(seconds=0)
         self.global_cooldown = dt.timedelta(seconds=0)
         self.last_uses = defaultdict(lambda: dt.datetime.fromtimestamp(0))
         self.last_global_use = dt.datetime.fromtimestamp(0)
@@ -16,8 +16,8 @@ class ChatCommand:
 
     async def on_chat_message(self, data):
         if not self.check(data): return
-        self.update_cooldowns(data)
-        await self.command(data)
+        if await self.command(data):
+            self.update_cooldowns(data)
 
     def check(self, data):
         msg = data['msg']
@@ -35,7 +35,22 @@ class ChatCommand:
         self.last_uses[name.lower()] = dt.datetime.now()
 
     async def command(self, data):
-        pass
+        #should return true or false, indicating whether cooldown should be triggered
+        return True
+
+class QuoteCommand(ChatCommand):
+    def __init__(self, bot):
+        super().__init__(bot)
+        self.command_name = '$quote'
+
+    async def command(self, data):
+        quotes = await self.bot.db.get_quote(data['username'])
+        try: q_name, q_msg, q_time = quotes[0][0], quotes[0][1], quotes[0][2]
+        except IndexError: return False
+        q_time = dt.datetime.fromtimestamp(q_time / 1000).strftime("%m/%d/%Y %H:%M:%S")
+        quote = f'[{q_name} {q_time}] {q_msg}'
+        await self.bot.send_chat_message(quote)
+        return True
 
 class RollCommand(ChatCommand):
     def __init__(self, bot):
@@ -48,7 +63,7 @@ class RollCommand(ChatCommand):
 
         if data['username'].lower() == 'RookieMcSpooks'.lower() or data['username'].lower() == 'Gigago'.lower():
             await self.bot.send_chat_message('Fuck ' + data['username'])
-            return
+            return True
 
         size = None
         print(args)
@@ -70,3 +85,4 @@ class RollCommand(ChatCommand):
         if consec > 1: msg = '[3d]' + msg + '[/3d] /go'
 
         await self.bot.send_chat_message(msg)
+        return True

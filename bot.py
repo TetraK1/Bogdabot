@@ -3,7 +3,7 @@ import asyncio
 
 from db import BotDB
 from userlist import Userlist, User
-from chatcommands import RollCommand
+from chatcommands import RollCommand, QuoteCommand
 from events import Event
 
 class Bot:
@@ -33,6 +33,7 @@ class Bot:
     async def setup_chat_handlers(self):
         self.on('chatMsg', self.db.log_chat_message)
         self.on('chatMsg', RollCommand(self))
+        self.on('chatMsg', QuoteCommand(self))
 
     def on(self, event, handler):
         #handler needs to be async

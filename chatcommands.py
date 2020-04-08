@@ -1,29 +1,47 @@
 import random
+from collections import defaultdict
+import datetime as dt
 
 class ChatCommand:
-    command = ''
-    min_rank = 1
-
     def __init__(self, bot):
-        #command is whatever a chat message should start with
         self.bot = bot
+        self.command_name = '' #e.g. $roll
+        self.min_rank = 1
+        self.user_cooldown = dt.timedelta(seconds=60)
+        self.global_cooldown = dt.timedelta(seconds=0)
+        self.last_uses = defaultdict(lambda: dt.datetime.fromtimestamp(0))
+        self.last_global_use = dt.datetime.fromtimestamp(0)
 
     async def on_chat_message(self, data):
+        if not self.check(data): return
+        self.update_cooldowns(data)
+        await self.command(data)
+
+    def check(self, data):
         msg = data['msg']
-        name = data['username']
+        name = data['username'].lower()
         args = msg.split(' ')
-        if args[0].lower() != self.command.lower(): return
-        if self.bot.userlist.get_user_by_name(name).rank < self.min_rank: return
-        await self.trigger(data)
-        
-    async def trigger(self, data):
-        #args is a list
+        if args[0].lower() != self.command_name.lower(): return False
+        if self.bot.userlist.get_user_by_name(name).rank < self.min_rank: return False
+        if not dt.datetime.now() - self.last_global_use > self.global_cooldown: return False
+        if not dt.datetime.now() - self.last_uses[name] > self.user_cooldown: return False
+        return True
+
+    def update_cooldowns(self, data):
+        name = data['username'].lower()
+        self.last_global_use = dt.datetime.now()
+        self.last_uses[name.lower()] = dt.datetime.now()
+
+    async def command(self, data):
         pass
 
 class RollCommand(ChatCommand):
-    command = '$roll'
-    min_rank = 1
-    async def trigger(self, data):
+    def __init__(self, bot):
+        super().__init__(bot)
+        self.command_name = '$roll'
+        self.min_rank = 3
+
+    async def command(self, data):
         args = data['msg'].split(' ')
 
         if data['username'].lower() == 'RookieMcSpooks'.lower() or data['username'].lower() == 'Gigago'.lower():

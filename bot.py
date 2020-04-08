@@ -27,7 +27,7 @@ class Bot:
         self.events = {}
         self.userlist = Userlist()
 
-    def setup_handlers(self):
+    async def setup_pre_handlers(self):
         printable_events = [
             'chatMsg',
             'usercount',
@@ -38,11 +38,13 @@ class Bot:
                 async def print_event(data): print(e + ':', data)
                 return print_event
             self.on(e, fuck_closures(e))
-
-        self.on('chatMsg', self.db.log_chat_message)
+        
         self.on('usercount', self.db.log_usercount)
         self.on('userlist', self.userlist.load_from_userlist)
         self.on('userLeave', self.userlist.on_user_leave)
+
+    async def setup_chat_handlers(self):
+        self.on('chatMsg', self.db.log_chat_message)
         self.on('chatMsg', RollCommand(self).on_chat_message)
 
     def on(self, event, handler):
@@ -60,9 +62,11 @@ class Bot:
         await self.socket.connect(server)
 
     async def join_channel(self, channel):
+        await self.setup_pre_handlers()
         await self.socket.emit('joinChannel', {'name':channel})
-        #await asyncio.sleep(1)
-        self.setup_handlers()
+        await asyncio.sleep(1)
+        await self.setup_chat_handlers()
+        await self.send_chat_message('Now handling commands')
 
     async def login(self, username, password):
         await self.socket.emit('login', {'name':username, 'pw':password})

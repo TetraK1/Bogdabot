@@ -10,8 +10,6 @@ async def main():
     await bot.connect(config['server'])
     await bot.login(config['username'], config['password'])
     await bot.join_channel(config['channel'])
-    await asyncio.sleep(1)
-
     await bot.socket.wait()
 
 asyncio.run(main())

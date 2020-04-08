@@ -12,6 +12,8 @@ class ChatCommand:
         self.last_uses = defaultdict(lambda: dt.datetime.fromtimestamp(0))
         self.last_global_use = dt.datetime.fromtimestamp(0)
 
+    async def __call__(self, *args, **kwargs): return await self.on_chat_message(*args, **kwargs)
+
     async def on_chat_message(self, data):
         if not self.check(data): return
         self.update_cooldowns(data)
@@ -65,6 +67,6 @@ class RollCommand(ChatCommand):
             consec += 1
 
         msg = data['username'] + ' rolled: ' + result
-        if consec > 1: msg = '[3d]' + msg + '[/3d]'
+        if consec > 1: msg = '[3d]' + msg + '[/3d] /go'
 
         await self.bot.send_chat_message(msg)

@@ -4,21 +4,7 @@ import asyncio
 from db import BotDB
 from userlist import Userlist, User
 from chatcommands import RollCommand
-
-class Event:
-    def __init__(self):
-        self.handlers = []
-
-    def trigger(self, data):
-        for f in self.handlers:
-            asyncio.create_task(f(data))
-
-    def register(self, handler):
-        if handler not in self.handlers: self.handlers.append(handler)
-    
-    def remove(self, handler): self.handlers.remove(handler)
-
-    def remove_all(self): self.handlers = []
+from events import Event
 
 class Bot:
     def __init__(self, **kwargs):
@@ -32,6 +18,7 @@ class Bot:
             'chatMsg',
             'usercount',
             #'userlist',
+            'kick',
         ]
         for e in printable_events:
             def fuck_closures(e):
@@ -45,7 +32,7 @@ class Bot:
 
     async def setup_chat_handlers(self):
         self.on('chatMsg', self.db.log_chat_message)
-        self.on('chatMsg', RollCommand(self).on_chat_message)
+        self.on('chatMsg', RollCommand(self))
 
     def on(self, event, handler):
         #handler needs to be async

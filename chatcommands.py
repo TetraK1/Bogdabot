@@ -1,12 +1,23 @@
+import asyncio
 import random
 from collections import defaultdict
 import datetime as dt
+
+class ChatCommands:
+    def __init__(self, bot):
+        self.bot = bot
+        self.commands = [cc(self.bot) for cc in ChatCommand.__subclasses__()]
+        self.__call__ = self.on_chat_message
+
+    async def on_chat_message(self, data):
+        for cc in self.commands:
+            asyncio.create_task(cc(data))
 
 class ChatCommand:
     def __init__(self, bot):
         self.bot = bot
         self.command_name = '' #e.g. $roll
-        self.min_rank = 1
+        self.min_rank = 3
         self.user_cooldown = dt.timedelta(seconds=0)
         self.global_cooldown = dt.timedelta(seconds=0)
         self.last_uses = defaultdict(lambda: dt.datetime.fromtimestamp(0))
@@ -44,10 +55,9 @@ class QuoteCommand(ChatCommand):
         self.command_name = '$quote'
 
     async def command(self, data):
-        quotes = await self.bot.db.get_quote(data['username'])
-        try: q_name, q_msg, q_time = quotes[0][0], quotes[0][1], quotes[0][2]
-        except IndexError: return False
-        q_time = dt.datetime.fromtimestamp(q_time / 1000).strftime("%m/%d/%Y %H:%M:%S")
+        quote = await self.bot.db.get_quote(data['username'])
+        if quote is None: return False
+        q_name, q_time, q_msg = quote['username'], quote['time'], quote['msg']
         quote = f'[{q_name} {q_time}] {q_msg}'
         await self.bot.send_chat_message(quote)
         return True
@@ -56,7 +66,6 @@ class RollCommand(ChatCommand):
     def __init__(self, bot):
         super().__init__(bot)
         self.command_name = '$roll'
-        self.min_rank = 3
 
     async def command(self, data):
         args = data['msg'].split(' ')

@@ -1,24 +1,29 @@
 import socketio
 import asyncio
+import json
 
-from db import BotDB
+from db import SqliteBotDB
 from userlist import Userlist, User
 from chatcommands import RollCommand, QuoteCommand
 from events import Event
 
 class Bot:
-    def __init__(self, **kwargs):
+    def __init__(self, database=None, **kwargs):
         self.socket = socketio.AsyncClient(**kwargs)
-        self.db = BotDB()
+        self.db = database
+        if database is None: self.db = SqliteBotDB('bot.db')
         self.events = {}
         self.userlist = Userlist()
 
     async def setup_pre_handlers(self):
+        await self.db.connect()
         printable_events = [
-            'chatMsg',
-            'usercount',
+            #'chatMsg',
+            #'usercount',
             #'userlist',
-            'kick',
+            #'kick',
+            #'playlist',
+            #'setPlaylistMeta',
         ]
         for e in printable_events:
             def fuck_closures(e):
@@ -29,6 +34,13 @@ class Bot:
         self.on('usercount', self.db.log_usercount)
         self.on('userlist', self.userlist.load_from_userlist)
         self.on('userLeave', self.userlist.on_user_leave)
+        self.on('addUser', self.userlist.on_add_user)
+
+        async def yuh(data):
+            with open('playlist.json', 'w') as f:
+                json.dump(data, f)
+
+        self.on('playlist', yuh)
 
     async def setup_chat_handlers(self):
         self.on('chatMsg', self.db.log_chat_message)
@@ -54,7 +66,7 @@ class Bot:
         await self.socket.emit('joinChannel', {'name':channel})
         await asyncio.sleep(1)
         await self.setup_chat_handlers()
-        await self.send_chat_message('Now handling commands')
+        #await self.send_chat_message('Now handling commands')
 
     async def login(self, username, password):
         await self.socket.emit('login', {'name':username, 'pw':password})

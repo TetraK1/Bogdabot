@@ -4,17 +4,19 @@ import asyncpg
 import datetime as dt
 import logging
 
+logger = logging.getLogger(__name__)
+
 class PostgresBotDB:
     def __init__(self, bot):
         self.bot = bot
-        self.logger = logging.getLogger(__name__)
+        self.logger = logger
         #lock is hacky
         self.lock = asyncio.Lock()
 
     async def connect(self, user, password, database, host):
         self.logger.info('Connecting to database ' + database + '@' + host)
         self.db = await asyncpg.connect(user=user, password=password, database=database, host=host)
-        self.logger.debug('Connected to database')
+        self.logger.info('Connected to database')
         await self.create_tables()
         return self
 
@@ -53,12 +55,14 @@ class PostgresBotDB:
                 )
 
     async def log_chat_message(self, data):
+        self.logger.debug('Inserting chat message ' + str(data))
         time = dt.datetime.fromtimestamp(data['time']/1000.0)
         async with self.lock:
             async with self.db.transaction():
                 await self.db.execute('INSERT INTO chat VALUES($1, $2, $3)', time, data['username'], data['msg'])
 
     async def log_usercount(self, data):
+        self.logger.debug('Inserting usercount ' + str(data))
         async with self.lock:
             async with self.db.transaction():
                 await self.db.execute('INSERT INTO user_count VALUES(CURRENT_TIMESTAMP, $1)', data)
@@ -67,6 +71,7 @@ class PostgresBotDB:
         pass
     
     async def get_quote(self, username):
+        self.logger.debug('Getting quote from ' + username)
         async with self.lock:
             async with self.db.transaction():
                 x = await self.db.fetch("SELECT username, msg, timestamp FROM chat WHERE username ILIKE $1 ORDER BY RANDOM() LIMIT 1", username)

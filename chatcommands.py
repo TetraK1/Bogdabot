@@ -7,7 +7,6 @@ class ChatCommands:
     def __init__(self, bot):
         self.bot = bot
         self.commands = [cc(self.bot) for cc in ChatCommand.__subclasses__()]
-        self.__call__ = self.on_chat_message
 
     async def on_chat_message(self, data):
         for cc in self.commands:
@@ -69,6 +68,9 @@ class RollCommand(ChatCommand):
     def __init__(self, bot):
         super().__init__(bot)
         self.command_name = '$roll'
+        self.min_rank = 1
+        self.global_cooldown = dt.timedelta(seconds=0)
+        self.user_cooldown = dt.timedelta(minutes=23)
 
     async def command(self, data):
         args = data['msg'].split(' ')
@@ -78,11 +80,10 @@ class RollCommand(ChatCommand):
             return True
 
         size = None
-        print(args)
         try:
             size = int(args[1])
         except (ValueError, IndexError): pass
-        if size is None or size < 0 or size > 100: size = 2
+        if size is None or size <= 0 or size > 10: size = 2
 
         result = random.randint(0, 10**size - 1)
         result = str(result).zfill(size)

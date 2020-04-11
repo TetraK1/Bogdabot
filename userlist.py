@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 class User:
     def __init__(self, name='', rank=0, muted=False, afk=False, profile_image='', profile_text=''):
         self.name = name
@@ -26,18 +29,19 @@ class Userlist:
         self.bot.on('addUser', self.on_add_user)
 
     async def load_from_userlist(self, data):
+        logger.debug('Loading userlist from userlist event')
         for user_data in data:
             user = User().load_from_data(user_data)
             self.list.append(user)
 
     async def on_user_leave(self, data):
+        logger.info(data['name'] + ' left')
         self.list.remove(self.get_user_by_name(data['name']))
-        print('userlist length:', len(self.list))
 
     async def on_add_user(self, data):
+        logger.info(data['name'] + ' joined')
         user = User().load_from_data(data)
         self.list.append(user)
-        print('userlist length:', len(self.list))
 
     def get_user_by_name(self, name):
         for user in self.list:

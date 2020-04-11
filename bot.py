@@ -4,7 +4,7 @@ import json
 import logging
 
 from userlist import Userlist, User
-from chatcommands import RollCommand, QuoteCommand
+from chatcommands import ChatCommands
 from events import Event
 
 class Bot:
@@ -17,9 +17,10 @@ class Bot:
         self.logger = logging.getLogger(__name__)
         self.socket = socketio.AsyncClient(logger=True)
         self.events = {}
-        #self.userlist = Userlist(self)
+        self.userlist = Userlist(self)
         self.db = None
         #Used to check whether the bot has logged in and processed old chat messages
+        self.chat_commands = ChatCommands(self)
         self.started = asyncio.Event()
 
     async def start(self):
@@ -71,6 +72,7 @@ class Bot:
             self.on(e, fuck_closures(e))
 
     async def setup_post_handlers(self):
+        self.on('chatMsg', self.chat_commands.on_chat_message)
         pass
 
     def on(self, event, handler):

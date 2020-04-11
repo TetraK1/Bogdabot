@@ -18,8 +18,12 @@ class User:
         return self
 
 class Userlist:
-    def __init__(self):
+    def __init__(self, bot):
+        self.bot = bot
         self.list = []
+        self.bot.on('userlist', self.load_from_userlist)
+        self.bot.on('userLeave', self.on_user_leave)
+        self.bot.on('addUser', self.on_add_user)
 
     async def load_from_userlist(self, data):
         for user_data in data:

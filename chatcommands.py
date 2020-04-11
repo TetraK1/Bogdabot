@@ -55,7 +55,10 @@ class QuoteCommand(ChatCommand):
         self.command_name = '$quote'
 
     async def command(self, data):
-        quote = await self.bot.db.get_quote(data['username'])
+        try:
+            name = data['msg'].split(' ')[1]
+        except IndexError: return False
+        quote = await self.bot.db.get_quote(name)
         if quote is None: return False
         q_name, q_time, q_msg = quote['username'], quote['time'], quote['msg']
         quote = f'[{q_name} {q_time}] {q_msg}'

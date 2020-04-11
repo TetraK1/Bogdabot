@@ -1,20 +1,25 @@
 import socketio
 import asyncio
 import json
-from bot import Bot
-from db import SqliteBotDB, PostgresBotDB
+import logging
 
+from bot import Bot
+from db import PostgresBotDB
+
+logging.basicConfig(level=logging.WARNING)
 with open('config.json') as f: config = json.loads(f.read())
 
-db = config['database']
-db = PostgresBotDB(db['username'], db['password'], db['database'], db['host'])
+db_config = config['database']
 
-bot = Bot(database=db, logger=True)
+
 
 async def main():
-    await bot.connect(config['server'])
-    await bot.login(config['username'], config['password'])
-    await bot.join_channel(config['channel'])
+    bot = Bot(config['server'], config['channel'], config['username'], config['password'])
+    bot.db = PostgresBotDB(bot)
+    bot.logger.setLevel(logging.DEBUG)
+    bot.db.logger.setLevel(logging.DEBUG)
+    await bot.db.connect(db_config['username'], db_config['password'], db_config['database'], db_config['host'])
+    await bot.start()
     await bot.socket.wait()
 
 asyncio.run(main())

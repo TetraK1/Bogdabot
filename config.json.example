@@ -1,0 +1,12 @@
+{
+    "server": "https://zip.cytu.be:10443",
+    "username": "cytubename",
+    "password": "cytubepass",
+    "channel": "cytuberoom",
+    "database": {
+        "username": "dbname",
+        "password": "dbpass",
+        "database": "db",
+        "host": "hostaddress"
+    }
+}

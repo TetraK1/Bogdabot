@@ -74,7 +74,7 @@ class PostgresBotDB:
         self.logger.debug('Getting quote from ' + username)
         async with self.lock:
             async with self.db.transaction():
-                x = await self.db.fetch("SELECT username, msg, timestamp FROM chat WHERE username ILIKE $1 ORDER BY RANDOM() LIMIT 1", username)
+                x = await self.db.fetch("SELECT username, msg, timestamp FROM chat WHERE username ILIKE $1 AND msg NOT LIKE '/%' AND msg NOT LIKE '$%' AND LENGTH(msg) > 20 ORDER BY RANDOM() LIMIT 1", username)
         try:
             x = x[0]
         except IndexError:

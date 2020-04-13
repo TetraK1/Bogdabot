@@ -6,6 +6,7 @@ import logging
 from userlist import Userlist, User
 from chatcommands import ChatCommands
 from events import Event
+from playlist import Playlist
 
 class Bot:
     def __init__(self, server, channel, username, password):
@@ -15,9 +16,10 @@ class Bot:
         self.password = password
 
         self.logger = logging.getLogger(__name__)
-        self.socket = socketio.AsyncClient(logger=True)
+        self.socket = socketio.AsyncClient()
         self.events = {}
         self.userlist = Userlist(self)
+        self.playlist = Playlist(self)
         self.db = None
         #Used to check whether the bot has logged in and processed old chat messages
         self.chat_commands = ChatCommands(self)
@@ -62,8 +64,9 @@ class Bot:
             #'userlist',
             #'kick',
             #'playlist',
+            #'login',
             #'setPlaylistMeta',
-            'login'
+            #'queue',
         ]
         for e in printable_events:
             def fuck_closures(e):

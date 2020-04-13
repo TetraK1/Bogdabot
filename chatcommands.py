@@ -52,6 +52,8 @@ class QuoteCommand(ChatCommand):
     def __init__(self, bot):
         super().__init__(bot)
         self.command_name = '$quote'
+        #self.user_cooldown = dt.timedelta(seconds=90)
+        #self.min_rank = 1
 
     async def command(self, data):
         try:
@@ -60,6 +62,7 @@ class QuoteCommand(ChatCommand):
         quote = await self.bot.db.get_quote(name)
         if quote is None: return False
         q_name, q_time, q_msg = quote['username'], quote['time'], quote['msg']
+        q_time = q_time.strftime('%c')
         quote = f'[{q_name} {q_time}] {q_msg}'
         await self.bot.send_chat_message(quote)
         return True
@@ -68,9 +71,9 @@ class RollCommand(ChatCommand):
     def __init__(self, bot):
         super().__init__(bot)
         self.command_name = '$roll'
-        self.min_rank = 1
-        self.global_cooldown = dt.timedelta(seconds=0)
-        self.user_cooldown = dt.timedelta(minutes=23)
+        #self.min_rank = 1
+        #self.global_cooldown = dt.timedelta(seconds=0)
+        #self.user_cooldown = dt.timedelta(minutes=23)
 
     async def command(self, data):
         args = data['msg'].split(' ')

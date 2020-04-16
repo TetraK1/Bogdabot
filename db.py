@@ -34,12 +34,13 @@ class PostgresBotDB:
                     """CREATE TABLE IF NOT EXISTS chat(
                         timestamp TIMESTAMP, 
                         username TEXT, 
-                        msg TEXT)"""
+                        msg TEXT
+                    )"""
                 )
                 await self.db.execute(
                     """CREATE TABLE IF NOT EXISTS users(
-                    uname TEXT PRIMARY KEY,
-                    rank TEXT
+                        username TEXT PRIMARY KEY,
+                        rank TEXT
                     )"""
                 )
                 #type is where it's from e.g. 'yt'
@@ -54,7 +55,7 @@ class PostgresBotDB:
 
                 await self.db.execute(
                     """CREATE TABLE IF NOT EXISTS video_plays(
-                        type TEXT,
+                        video_type TEXT,
                         video_id TEXT,
                         timestamp TIMESTAMP
                     )"""
@@ -64,6 +65,16 @@ class PostgresBotDB:
                     """CREATE TABLE IF NOT EXISTS usercounts(
                         timestamp TIMESTAMP,
                         usercount INTEGER
+                    )"""
+                )
+
+                await self.db.execute(
+                    """CREATE TABLE IF NOT EXISTS video_adds(
+                        video_type TEXT,
+                        video_id TEXT,
+                        from_username TEXT,
+                        video_uid TEXT,
+                        timestamp TIMESTAMP
                     )"""
                 )
 
@@ -81,17 +92,11 @@ class PostgresBotDB:
             async with self.db.transaction():
                 await self.db.execute('INSERT INTO usercounts VALUES(CURRENT_TIMESTAMP, $1)', usercount)
 
-    async def on_queue(self, data):
-        t = data['item']['media']['type']
-        id = data['item']['media']['id']
-        duration = dt.timedelta(seconds=int(data['item']['media']['seconds']))
-        title = data['item']['media']['title']
-        await self.log_video(t, id, duration, title)
     async def log_video(self, vtype, id, duration, title):
         self.logger.debug('Inserting video ' + str([vtype, id, duration, title]))
         async with self.lock:
             async with self.db.transaction():
-                await self.db.execute('INSERT INTO videos VALUES($1, $2, $3, $4)', vtype, id, duration, title)
+                await self.db.execute('INSERT INTO videos VALUES($1, $2, $3, $4) ON CONFLICT DO NOTHING', vtype, id, duration, title)
 
     async def on_changeMedia(self, data):
         #["changeMedia",{"id":"p-GVl7scrYE","title":"Great Depression Cooking - The Poorman's Meal - Higher Resolution","seconds":402,"duration":"06:42","type":"yt","meta":{},"currentTime":-3,"paused":true}]
@@ -107,6 +112,22 @@ class PostgresBotDB:
         async with self.lock:
             async with self.db.transaction():
                 await self.db.execute('INSERT INTO video_plays VALUES($1, $2, $3)', vtype, id, time)
+
+    async def on_queue(self, data):
+        vtype = data['item']['media']['type']
+        id = data['item']['media']['id']
+        duration = dt.timedelta(seconds=int(data['item']['media']['seconds']))
+        title = data['item']['media']['title']
+        username = data['item']['queueby']
+        uid = str(data['item']['uid'])
+        timestamp = dt.datetime.utcnow()
+        await self.log_video(vtype, id, duration, title)
+        await self.log_video_add(vtype, id, username, uid, timestamp)
+    async def log_video_add(self, vtype, id, username, uid, timestamp):
+        self.logger.debug('Inserting video-add ' + str([vtype, id, username]))
+        async with self.lock:
+            async with self.db.transaction():
+                await self.db.execute('INSERT INTO video_adds VALUES($1, $2, $3, $4, $5)', vtype, id, username, uid, timestamp)
     
     async def get_quote(self, username):
         self.logger.debug('Getting quote from ' + username)

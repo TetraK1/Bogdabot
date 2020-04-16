@@ -12,6 +12,12 @@ class PostgresBotDB:
         self.logger = logger
         #lock is hacky
         self.lock = asyncio.Lock()
+        #Automatically register any methods named 'on_*' e.g. 'on_chatMsg'
+        #to the appropriate bot event
+        for attr_name in dir(self):
+            split_name = attr_name.split('_', 1)
+            if len(split_name) == 2 and split_name[0] == 'on':
+                self.bot.on(split_name[1], getattr(self, attr_name))
 
     async def connect(self, user, password, database, host):
         self.logger.info('Connecting to database ' + database + '@' + host)
@@ -19,11 +25,6 @@ class PostgresBotDB:
         self.logger.info('Connected to database')
         await self.create_tables()
         return self
-
-    async def setup_handlers(self):
-        async with self.lock:
-            self.bot.on('chatMsg', self.log_chat_message)
-            self.bot.on('usercount', self.log_usercount)
 
     async def create_tables(self):
         async with self.lock:
@@ -37,38 +38,75 @@ class PostgresBotDB:
                 )
                 await self.db.execute(
                     """CREATE TABLE IF NOT EXISTS users(
-                    uname TEXT PRIMARY KEY)"""
+                    uname TEXT PRIMARY KEY,
+                    rank TEXT
+                    )"""
                 )
                 #type is where it's from e.g. 'yt'
                 await self.db.execute(
                     """CREATE TABLE IF NOT EXISTS videos(
                         type TEXT, 
                         id TEXT,
-                        duration_ms INTERVAL, 
+                        duration INTERVAL, 
                         title TEXT,
                         PRIMARY KEY (type, id))"""
                 )
+
                 await self.db.execute(
-                    """CREATE TABLE IF NOT EXISTS user_count(
-                        timestamp TIMESTAMP, 
-                        count INTEGER)"""
+                    """CREATE TABLE IF NOT EXISTS video_plays(
+                        type TEXT,
+                        video_id TEXT,
+                        timestamp TIMESTAMP
+                    )"""
                 )
 
-    async def log_chat_message(self, data):
-        self.logger.debug('Inserting chat message ' + str(data))
-        time = dt.datetime.fromtimestamp(data['time']/1000.0)
+                await self.db.execute(
+                    """CREATE TABLE IF NOT EXISTS usercounts(
+                        timestamp TIMESTAMP,
+                        usercount INTEGER
+                    )"""
+                )
+
+    async def on_chatMsg(self, data): await self.log_chat_message(dt.datetime.fromtimestamp(data['time']/1000.0), data['username'], data['msg'])
+    async def log_chat_message(self, time, uname, msg):
+        self.logger.debug('Inserting chat message ' + str([time.strftime('%x %X'), uname, msg]))
         async with self.lock:
             async with self.db.transaction():
-                await self.db.execute('INSERT INTO chat VALUES($1, $2, $3)', time, data['username'], data['msg'])
+                await self.db.execute('INSERT INTO chat VALUES($1, $2, $3)', time, uname, msg)
 
-    async def log_usercount(self, data):
-        self.logger.debug('Inserting usercount ' + str(data))
+    async def on_usercount(self, data): await self.log_usercount(data)
+    async def log_usercount(self, usercount):
+        self.logger.debug('Inserting usercount ' + str(usercount))
         async with self.lock:
             async with self.db.transaction():
-                await self.db.execute('INSERT INTO user_count VALUES(CURRENT_TIMESTAMP, $1)', data)
+                await self.db.execute('INSERT INTO usercounts VALUES(CURRENT_TIMESTAMP, $1)', usercount)
 
-    async def log_video(self, data):
-        pass
+    async def on_queue(self, data):
+        t = data['item']['media']['type']
+        id = data['item']['media']['id']
+        duration = dt.timedelta(seconds=int(data['item']['media']['seconds']))
+        title = data['item']['media']['title']
+        await self.log_video(t, id, duration, title)
+    async def log_video(self, vtype, id, duration, title):
+        self.logger.debug('Inserting video ' + str([vtype, id, duration, title]))
+        async with self.lock:
+            async with self.db.transaction():
+                await self.db.execute('INSERT INTO videos VALUES($1, $2, $3, $4)', vtype, id, duration, title)
+
+    async def on_changeMedia(self, data):
+        #["changeMedia",{"id":"p-GVl7scrYE","title":"Great Depression Cooking - The Poorman's Meal - Higher Resolution","seconds":402,"duration":"06:42","type":"yt","meta":{},"currentTime":-3,"paused":true}]
+        vtype = data['type']
+        id = data['id']
+        title = data['title']
+        time = dt.datetime.now()
+        duration = dt.timedelta(seconds=int(data['seconds']))
+        await self.log_video_play(vtype, id, time)
+        await self.log_video(vtype, id, duration, title)
+    async def log_video_play(self, vtype, id, time):
+        self.logger.debug('Inserting video play ' + str([vtype, id, time.strftime('%x %X')]))
+        async with self.lock:
+            async with self.db.transaction():
+                await self.db.execute('INSERT INTO video_plays VALUES($1, $2, $3)', vtype, id, time)
     
     async def get_quote(self, username):
         self.logger.debug('Getting quote from ' + username)
@@ -81,42 +119,3 @@ class PostgresBotDB:
             return None
 
         return {'username': x['username'], 'msg': x['msg'], 'time': x['timestamp']}
-
-# class SqliteBotDB:
-#     def __init__(self, database):
-#         self.database = database
-#         self.bot.on('chatMsg', self.log_chat_message)
-
-#     async def connect(self):
-#         self.db = await aiosqlite.connect(self.database)
-#         await self.create_tables()
-
-#     async def create_tables(self):
-#         await self.db.execute('CREATE TABLE IF NOT EXISTS chat(timestamp INTEGER, username TEXT, msg TEXT)')
-#         await self.db.execute('CREATE TABLE IF NOT EXISTS users(uname TEXT)')
-#         #type is where it's from e.g. 'yt'
-#         await self.db.execute('CREATE TABLE IF NOT EXISTS videos(type TEXT, id TEXT, duration_ms INTEGER, title TEXT, PRIMARY KEY (type, id))')
-#         await self.db.execute('CREATE TABLE IF NOT EXISTS user_count(timestamp INTEGER, count INTEGER)')
-#         await self.db.commit()
-
-#     async def log_chat_message(self, data):
-#         data = (data['time'], data['username'], data['msg'])
-#         await self.db.execute('INSERT INTO chat VALUES(?, ?, ?)', data)
-#         await self.db.commit()
-
-#     async def log_usercount(self, data):
-#         data = data,
-#         await self.db.execute('INSERT INTO user_count VALUES(CURRENT_TIMESTAMP, ?)', data)
-#         await self.db.commit()
-
-#     async def log_video(self, data):
-#         pass
-    
-#     async def get_quote(self, username):
-#         x = await self.db.execute("SELECT username, msg, timestamp FROM chat WHERE username = ? COLLATE NOCASE ORDER BY RANDOM() LIMIT 1", (username,))
-#         x = await x.fetchall()
-#         try:
-#             x = x[0]
-#         except IndexError:
-#             return None
-#         return {'username': x[0], 'msg': x[1], 'time': dt.datetime.fromtimestamp(x[2] / 1000)}

@@ -2,22 +2,7 @@ import datetime as dt
 import logging
 
 class Video:
-    #example json
-    """
-    {
-        'media': {
-            'id': '3qChRiHmbVg',
-            'title': 'Four Strokes #4strokegang',
-            'seconds': 155,
-            'duration': '02:35',
-            'type': 'yt',
-            'meta': {}
-        },
-        'uid': 16239,
-        'temp': True,
-        'queueby': 'HashiramaHasWood'
-    }
-    """
+    '''{"media":{"id":"3qChRiHmbVg","title":"Four Strokes #4strokegang","seconds":155,"duration":"02:35","type":"yt","meta":{}},"uid":16239,"temp":true,"queueby":"HashiramaHasWood"}'''
     def __init__(self, data=None):
         if data is not None: self.load_from_data(data)
 
@@ -39,41 +24,52 @@ class Playlist:
         self.bot.on('playlist', self.on_playlist)
         self.bot.on('queue', self.on_queue)
         self.bot.on('delete', self.on_delete)
+        self.bot.on('moveVide', self.on_moveVideo)
         self.logger = logging.getLogger(__name__)
 
     async def load_from_data(self, data):
+        '''Load playlist data from the "playlist" event data.
+        
+        Data takes the form of a list of video objects'''
+        #data is from the playlist event
+        #data is a list of video objects
+        self.logger.info('Loading playlist')
         self.videos.clear()
+        self.logger.debug('Videolist cleared')
         for video_data in data:
             self.videos.append(Video(video_data))
-        self.logger.debug('Loaded playlist, ' + str(len(self.videos)) + ' videos long')
+            self.logger.debug(f'Appended {self.videos[-1].title}')
+        self.logger.info(f'Playlist has {len(self.videos)} videos')
 
     def get_by_uid(self, uid):
+        '''Return the video object in the list matching the given uid'''
         for video in self.videos:
             if video.uid == uid:
                 return video
 
-    def insert_after_uid(self, uid, video):
-        after_index = self.videos.index(self.get_by_uid(uid))
-        self.videos.insert(after_index + 1, video)
-
-    async def on_playlist(self, data): return await self.load_from_data(data)
+    async def on_playlist(self, data): 
+        return await self.load_from_data(data)
 
     async def on_queue(self, data):
-        after_video = self.get_by_uid(data['after'])
+        '''{"item":{"media":{"id":"qXD9HnrNrvk","title":"Expert Wasted Entire Life Studying Anteaters","seconds":175,"duration":"02:55","type":"yt","meta":{}},"uid":16345,"temp":true,"queueby":"AsKdf"},"after":16344}'''
         new_video = Video(data=data['item'])
-        self.logger.debug(f'Inserting video "{new_video.title}" after "{after_video.title}"')
-        self.insert_after_uid(data['after'], new_video)
+        after_video = self.get_by_uid(data['after'])
+        video_index = self.videos.index(after_video) + 1
+        self.videos.insert(video_index, new_video)
+        self.logger.info(f'Video "{new_video.title}" added to {video_index}')
         self.logger.debug('Playlist is ' + str(len(self.videos)) + ' long')
     
     async def on_delete(self, data):
         video = self.get_by_uid(data['uid'])
-        self.logger.debug(f'Removing video "{video.title}"')
         self.videos.remove(video)
+        self.logger.info(f'Video "{video.title}" deleted')
         self.logger.debug(f'Playlist is {len(self.videos)} long')
-        return
 
     async def on_moveVideo(self, data):
         video = self.get_by_uid(data['from'])
-        self.logger.debug(f'Moving video "{video.title}"')
+        after_video = self.get_by_uid(data['after'])
+        old_index = self.videos.index(video)
+        new_index = self.videos.index(after_video) + 1
         self.videos.remove(video)
-        self.insert_after_uid(data['after'], video)
+        self.videos.insert(new_index, video)
+        self.logger.info(f'"{video.title}" moved from {old_index} to {new_index}')

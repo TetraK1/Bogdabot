@@ -62,7 +62,7 @@ class QuoteCommand(ChatCommand):
         quote = await self.bot.db.get_quote(name)
         if quote is None: return False
         q_name, q_time, q_msg = quote['username'], quote['time'], quote['msg']
-        q_time = q_time.strftime('%c')
+        q_time = q_time.strftime('%a %b %d %Y')
         quote = f'[{q_name} {q_time}] {q_msg}'
         await self.bot.send_chat_message(quote)
         return True

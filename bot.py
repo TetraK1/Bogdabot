@@ -33,7 +33,6 @@ class Bot:
         await self.setup_pre_handlers()
         await asyncio.sleep(1)
         await self.setup_post_handlers()
-        await self.db.setup_handlers()
         #await self.send_chat_message('Now handling commands')
 
     async def connect(self, server):
@@ -54,7 +53,7 @@ class Bot:
         await self.socket.emit('chatMsg', data)
 
     async def send_pm(self, to, msg):
-        data = {'to': to, 'msg':msg, 'meta':{'modflair':1}}
+        data = {'to': to, 'msg':msg, 'meta':{}}
         await self.socket.emit('pm', data)
 
     async def setup_pre_handlers(self):
@@ -67,6 +66,7 @@ class Bot:
             #'login',
             #'setPlaylistMeta',
             #'queue',
+            'changeMedia'
         ]
         for e in printable_events:
             def fuck_closures(e):
@@ -76,7 +76,10 @@ class Bot:
 
     async def setup_post_handlers(self):
         self.on('chatMsg', self.chat_commands.on_chat_message)
-        pass
+        async def fuck_rin(data):
+            if data['username'] != 'rinpleasesoldmen': return
+            self.send_pm('rinpleasesoldmen', 'shut the fuck up rin')
+        self.on('chatMsg', fuck_rin)
 
     def on(self, event, handler):
         #handler needs to be async

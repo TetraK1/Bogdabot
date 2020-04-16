@@ -11,11 +11,10 @@ import userlist
 logging.basicConfig(level=logging.WARN)
 logging.getLogger('engineio').setLevel(WARN)
 logging.getLogger('socketio').setLevel(WARN)
-logging.getLogger('bot').setLevel(DEBUG)
-logging.getLogger('db').setLevel(INFO)
-logging.getLogger('userlist').setLevel(INFO)
-logging.getLogger('playlist').setLevel(DEBUG)
-
+logging.getLogger('bot').setLevel(WARN)
+logging.getLogger('db').setLevel(DEBUG)
+logging.getLogger('userlist').setLevel(WARN)
+logging.getLogger('playlist').setLevel(WARN)
 
 with open('config.json') as f: config = json.loads(f.read())
 
@@ -30,3 +29,4 @@ async def main():
     await bot.socket.wait()
 
 asyncio.run(main())
+#asyncio.run(main(), debug=True)

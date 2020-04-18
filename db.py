@@ -12,6 +12,12 @@ class PostgresBotDB:
         self.logger = logger
         #lock is hacky
         self.lock = asyncio.Lock()
+
+        #used in tracking which videos are skipped
+        self.current_video_id = None
+        self.current_video_type = None
+        self.voteskipped = False
+
         #Automatically register any methods named 'on_*' e.g. 'on_chatMsg'
         #to the appropriate bot event
         for attr_name in dir(self):
@@ -78,7 +84,19 @@ class PostgresBotDB:
                     )"""
                 )
 
-    async def on_chatMsg(self, data): await self.log_chat_message(dt.datetime.fromtimestamp(data['time']/1000.0), data['username'], data['msg'])
+                await self.db.execute(
+                    """CREATE TABLE IF NOT EXISTS video_skips(
+                        video_type TEXT,
+                        video_id TEXT,
+                        timestamp TIMESTAMP
+                    )"""
+                )
+
+    async def on_chatMsg(self, data):
+        if data['username'] == '[voteskip]':
+            self.logger.info('Video skipped')
+            self.voteskipped = True
+        await self.log_chat_message(dt.datetime.fromtimestamp(data['time']/1000.0), data['username'], data['msg'])
     async def log_chat_message(self, time, uname, msg):
         self.logger.debug('Inserting chat message ' + str([time.strftime('%x %X'), uname, msg]))
         async with self.lock:
@@ -105,8 +123,13 @@ class PostgresBotDB:
         title = data['title']
         time = dt.datetime.now()
         duration = dt.timedelta(seconds=int(data['seconds']))
-        await self.log_video_play(vtype, id, time)
-        await self.log_video(vtype, id, duration, title)
+        if self.voteskipped and self.current_video_id is not None and self.current_video_id is not None:
+            self.voteskipped = False
+            asyncio.create_task(self.log_skipped_video(self.current_video_type, self.current_video_id, time))
+        self.current_video_type, self.current_video_id = vtype, id
+        asyncio.create_task(self.log_video_play(vtype, id, time))
+        asyncio.create_task(self.log_video(vtype, id, duration, title))
+
     async def log_video_play(self, vtype, id, time):
         self.logger.debug('Inserting video play ' + str([vtype, id, time.strftime('%x %X')]))
         async with self.lock:
@@ -128,6 +151,11 @@ class PostgresBotDB:
         async with self.lock:
             async with self.db.transaction():
                 await self.db.execute('INSERT INTO video_adds VALUES($1, $2, $3, $4, $5)', vtype, id, username, uid, timestamp)
+
+    async def log_skipped_video(self, video_type, video_id, timestamp):
+        async with self.lock:
+            async with self.db.transaction():
+                await self.db.execute('INSERT INTO video_skips VALUES($1, $2, $3)', video_type, video_id, timestamp)
     
     async def get_quote(self, username):
         self.logger.debug('Getting quote from ' + username)

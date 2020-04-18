@@ -97,24 +97,8 @@ class PostgresBotDB:
             self.logger.info('Video skipped')
             self.voteskipped = True
         await self.log_chat_message(dt.datetime.fromtimestamp(data['time']/1000.0), data['username'], data['msg'])
-    async def log_chat_message(self, time, uname, msg):
-        self.logger.debug('Inserting chat message ' + str([time.strftime('%x %X'), uname, msg]))
-        async with self.lock:
-            async with self.db.transaction():
-                await self.db.execute('INSERT INTO chat VALUES($1, $2, $3)', time, uname, msg)
 
     async def on_usercount(self, data): await self.log_usercount(data)
-    async def log_usercount(self, usercount):
-        self.logger.debug('Inserting usercount ' + str(usercount))
-        async with self.lock:
-            async with self.db.transaction():
-                await self.db.execute('INSERT INTO usercounts VALUES(CURRENT_TIMESTAMP, $1)', usercount)
-
-    async def log_video(self, vtype, id, duration, title):
-        self.logger.debug('Inserting video ' + str([vtype, id, duration, title]))
-        async with self.lock:
-            async with self.db.transaction():
-                await self.db.execute('INSERT INTO videos VALUES($1, $2, $3, $4) ON CONFLICT DO NOTHING', vtype, id, duration, title)
 
     async def on_changeMedia(self, data):
         #["changeMedia",{"id":"p-GVl7scrYE","title":"Great Depression Cooking - The Poorman's Meal - Higher Resolution","seconds":402,"duration":"06:42","type":"yt","meta":{},"currentTime":-3,"paused":true}]
@@ -130,12 +114,6 @@ class PostgresBotDB:
         asyncio.create_task(self.log_video_play(vtype, id, time))
         asyncio.create_task(self.log_video(vtype, id, duration, title))
 
-    async def log_video_play(self, vtype, id, time):
-        self.logger.debug('Inserting video play ' + str([vtype, id, time.strftime('%x %X')]))
-        async with self.lock:
-            async with self.db.transaction():
-                await self.db.execute('INSERT INTO video_plays VALUES($1, $2, $3)', vtype, id, time)
-
     async def on_queue(self, data):
         vtype = data['item']['media']['type']
         id = data['item']['media']['id']
@@ -146,6 +124,31 @@ class PostgresBotDB:
         timestamp = dt.datetime.utcnow()
         await self.log_video(vtype, id, duration, title)
         await self.log_video_add(vtype, id, username, uid, timestamp)
+
+    async def log_chat_message(self, time, uname, msg):
+        self.logger.debug('Inserting chat message ' + str([time.strftime('%x %X'), uname, msg]))
+        async with self.lock:
+            async with self.db.transaction():
+                await self.db.execute('INSERT INTO chat VALUES($1, $2, $3)', time, uname, msg)
+
+    async def log_usercount(self, usercount):
+        self.logger.debug('Inserting usercount ' + str(usercount))
+        async with self.lock:
+            async with self.db.transaction():
+                await self.db.execute('INSERT INTO usercounts VALUES(CURRENT_TIMESTAMP, $1)', usercount)
+
+    async def log_video(self, vtype, id, duration, title):
+        self.logger.debug('Inserting video ' + str([vtype, id, duration, title]))
+        async with self.lock:
+            async with self.db.transaction():
+                await self.db.execute('INSERT INTO videos VALUES($1, $2, $3, $4) ON CONFLICT DO NOTHING', vtype, id, duration, title)
+
+    async def log_video_play(self, vtype, id, time):
+        self.logger.debug('Inserting video play ' + str([vtype, id, time.strftime('%x %X')]))
+        async with self.lock:
+            async with self.db.transaction():
+                await self.db.execute('INSERT INTO video_plays VALUES($1, $2, $3)', vtype, id, time)
+
     async def log_video_add(self, vtype, id, username, uid, timestamp):
         self.logger.debug('Inserting video-add ' + str([vtype, id, username]))
         async with self.lock:

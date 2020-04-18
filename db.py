@@ -108,8 +108,8 @@ class PostgresBotDB:
         time = dt.datetime.now()
         duration = dt.timedelta(seconds=int(data['seconds']))
         if self.voteskipped and self.current_video_id is not None and self.current_video_id is not None:
-            self.voteskipped = False
             asyncio.create_task(self.log_skipped_video(self.current_video_type, self.current_video_id, time))
+        self.voteskipped = False
         self.current_video_type, self.current_video_id = vtype, id
         asyncio.create_task(self.log_video_play(vtype, id, time))
         asyncio.create_task(self.log_video(vtype, id, duration, title))

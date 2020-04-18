@@ -96,7 +96,7 @@ class PostgresBotDB:
         if data['username'] == '[voteskip]':
             self.logger.info('Video skipped')
             self.voteskipped = True
-        await self.log_chat_message(dt.datetime.fromtimestamp(data['time']/1000.0), data['username'], data['msg'])
+        asyncio.create_task(self.log_chat_message(dt.datetime.fromtimestamp(data['time']/1000.0), data['username'], data['msg']))
 
     async def on_usercount(self, data): await self.log_usercount(data)
 
@@ -122,8 +122,8 @@ class PostgresBotDB:
         username = data['item']['queueby']
         uid = str(data['item']['uid'])
         timestamp = dt.datetime.utcnow()
-        await self.log_video(vtype, id, duration, title)
-        await self.log_video_add(vtype, id, username, uid, timestamp)
+        asyncio.create_task(self.log_video(vtype, id, duration, title))
+        asyncio.create_task(self.log_video_add(vtype, id, username, uid, timestamp))
 
     async def log_chat_message(self, time, uname, msg):
         self.logger.debug('Inserting chat message ' + str([time.strftime('%x %X'), uname, msg]))

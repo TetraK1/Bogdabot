@@ -14,6 +14,7 @@ class PostgresBotDB:
         self.lock = asyncio.Lock()
 
         #used in tracking which videos are skipped
+        #important to note there may be data race issues
         self.current_video_id = None
         self.current_video_type = None
         self.voteskipped = False
@@ -94,7 +95,7 @@ class PostgresBotDB:
 
     async def on_chatMsg(self, data):
         if data['username'] == '[voteskip]':
-            self.logger.info('Video skipped')
+            self.logger.debug('Video skipped')
             self.voteskipped = True
         asyncio.create_task(self.log_chat_message(dt.datetime.fromtimestamp(data['time']/1000.0), data['username'], data['msg']))
 
@@ -156,6 +157,7 @@ class PostgresBotDB:
                 await self.db.execute('INSERT INTO video_adds VALUES($1, $2, $3, $4, $5)', vtype, id, username, uid, timestamp)
 
     async def log_skipped_video(self, video_type, video_id, timestamp):
+        self.logger.debug('Video skipped ' + str([video_type, video_id]))
         async with self.lock:
             async with self.db.transaction():
                 await self.db.execute('INSERT INTO video_skips VALUES($1, $2, $3)', video_type, video_id, timestamp)

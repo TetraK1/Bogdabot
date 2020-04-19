@@ -7,6 +7,7 @@ from userlist import Userlist, User
 from chatcommands import ChatCommands
 from events import Event
 from playlist import Playlist
+from discordbot import DiscordClient
 
 class Bot:
     def __init__(self, server, channel, username, password):
@@ -21,6 +22,7 @@ class Bot:
         self.userlist = Userlist(self)
         self.playlist = Playlist(self)
         self.db = None
+        self.discord_bot = DiscordClient(self)
         #Used to check whether the bot has logged in and processed old chat messages
         self.chat_commands = ChatCommands(self)
         self.started = asyncio.Event()
@@ -80,6 +82,7 @@ class Bot:
             if data['username'] != 'rinpleasesoldmen': return
             self.send_pm('rinpleasesoldmen', 'shut the fuck up rin')
         self.on('chatMsg', fuck_rin)
+        await self.discord_bot.start()
 
     def on(self, event, handler):
         #handler needs to be async

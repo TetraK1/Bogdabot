@@ -30,10 +30,32 @@ class DiscordClient(discord.Client):
         try:
             if data['meta']['action'] != True or data['meta']['addClass'] != 'action': return
         except KeyError: return
+
+        title = data['msg'].split('"', 1)[1].rsplit('"', 1)[0]
+
+        async with self.bot.db.lock:
+            async with self.bot.db.db.transaction():
+                x = await self.bot.db.db.fetch("""select videos.type, videos.id, videos.title, video_adds.from_username
+                    from videos
+                    inner join video_adds
+                    on videos.id = video_adds.video_id and videos.type = video_adds.video_type
+                    /*where videos.title = $1*/
+                    where videos.title = $1
+                    order by video_adds.timestamp desc limit 1
+                    """, 
+                    title
+                )
+        print(x)
+        x = x[0]
         embed = discord.Embed()
-        embed.title = data['msg'].split('"', 1)[1].rsplit('"', 1)[0]
+        embed.title = title
         embed.type = 'rich'
         embed.set_author(name='Video deleted')
         embed.color = 0xFF6666
+        embed.add_field(name='Posted by', value=x['from_username'])
         embed.add_field(name='Deleted by', value=data['username'])
+
+        if x['type'] == 'yt':
+            embed.description = 'https://youtu.be/' + x['id']
+
         await self.del_vids_channel.send(embed=embed)

@@ -45,7 +45,6 @@ class DiscordClient(discord.Client):
                     """, 
                     title
                 )
-        print(x)
         x = x[0]
         embed = discord.Embed()
         embed.title = title

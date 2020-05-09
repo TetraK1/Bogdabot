@@ -1,9 +1,3 @@
-CREATE TABLE IF NOT EXISTS events(
-	event_ts TIMESTAMP, 
-	event_name TEXT, 
-	event_data JSONB
-);
-
 CREATE OR REPLACE VIEW chat AS
 SELECT
 	event_ts as ts,
@@ -11,5 +5,4 @@ SELECT
 	event_data ->> 'username' as username,
 	event_data ->> 'msg' as msg
 from events
-where event = 'chatMsg';
-
+where event = 'chatMsg'

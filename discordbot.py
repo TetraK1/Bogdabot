@@ -2,30 +2,32 @@ import discord
 import asyncio
 import json
 import datetime as dt
+import logging
 
 with open('config.json') as f: CONFIG = json.loads(f.read())
+
+logger = logging.getLogger(__name__)
 
 class DiscordClient(discord.Client):
     def __init__(self, bot, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.bot = bot
-
         self.last_deleted_uid = None
+        self.del_vids_channel = None
+        self.logger = logger
 
-    async def start(self):
-        await super().start(CONFIG['discord']['token'])
-
-    async def on_ready(self):
-        self.del_vids_channel = self.get_channel(CONFIG['discord']['deleted-vids-channel'])
+    async def start(self, token):
+        self.logger.info('Starting discord')
         self.bot.on('delete', self.handle_vid_delete)
         self.bot.on('chatMsg', self.handle_chatMsg)
-        #await self.del_vids_channel.send('ready')
+        asyncio.create_task(super().start(token))
 
     async def handle_vid_delete(self, data):
         self.last_deleted_uid = data['uid']
 
     async def handle_chatMsg(self, data):
         #on bot event 'chatMsg'
+        if not self.del_vids_channel: return
         if data['msg'].split(' ', 1)[0] != 'deleted': return
         try:
             if data['meta']['action'] != True or data['meta']['addClass'] != 'action': return

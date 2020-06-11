@@ -1,12 +1,16 @@
 {
     "server": "https://zip.cytu.be:10443",
-    "username": "cytubename",
-    "password": "cytubepass",
-    "channel": "cytuberoom",
+    "username": "",
+    "password": "",
+    "channel": "",
     "database": {
-        "username": "dbname",
-        "password": "dbpass",
-        "database": "db",
-        "host": "hostaddress"
+        "username": "",
+        "password": "",
+        "database": "",
+        "host": ""
+    },
+    "discord":{
+        "token":"",
+        "deleted-vids-channel": 0
     }
 }

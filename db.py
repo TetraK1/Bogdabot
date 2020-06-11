@@ -2,9 +2,11 @@ import asyncio
 import aiosqlite
 import asyncpg
 import datetime as dt
-import logging
-import types
 import json
+import logging
+import os
+import pathlib
+import types
 
 logger = logging.getLogger(__name__)
 
@@ -12,11 +14,13 @@ class PostgresBotDB:
     def __init__(self, bot):
         self.bot = bot
         self.logger = logger
-        #lock is hacky
+        
+        #lock is hacky and probably needs to be changed
         self.lock = asyncio.Lock()
 
         #used in tracking which videos are skipped
         #important to note there may be data race issues
+        #also skipped videos might be available in the cytube native logs
         self.current_video_id = None
         self.current_video_type = None
         self.voteskipped = False
@@ -29,7 +33,7 @@ class PostgresBotDB:
                 self.bot.on(split_name[1], getattr(self, attr_name))
         self.patch_trigger()
 
-    async def connect(self, user, password, database, host):
+    async def start(self, user, password, database, host):
         self.logger.info('Connecting to database ' + database + '@' + host)
         self.db = await asyncpg.connect(user=user, password=password, database=database, host=host)
         self.logger.info('Connected to database')
@@ -40,8 +44,17 @@ class PostgresBotDB:
         async with self.lock:
             self.logger.debug('Creating tables')
             async with self.db.transaction():
-                with open('queries/setup.sql') as f: query = f.read()
-                await self.db.execute(query)
+                sql_setup_dir = pathlib.Path('sql/setup').resolve()
+                self.logger.info(f'Looking for setup queries in {sql_setup_dir}')
+                #Run all queries in sql/setup/tables, then run all queries in sql/setup/views
+                for rr_fp in (pathlib.Path('sql/setup/tables'), pathlib.Path('sql/setup/views')):
+                    for root, dirs, files in os.walk(rr_fp):
+                        for fp in files:
+                            fp = pathlib.Path(root) / pathlib.Path(fp)
+                            if fp.suffix != '.sql': continue
+                            with open(fp) as f: query = f.read()
+                            self.logger.debug(f'Running query {fp}')
+                            await self.db.execute(query)
 
     async def log_event(self, timestamp, event, data):
         self.logger.debug('Logging event ' + str(event) + ': ' + str(data))

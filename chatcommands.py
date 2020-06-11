@@ -1,14 +1,17 @@
 import asyncio
 import random
-from collections import defaultdict
+import collections
 import datetime as dt
 
 class ChatCommands:
     def __init__(self, bot):
         self.bot = bot
         self.commands = [cc(self.bot) for cc in ChatCommand.__subclasses__()]
+        self.bot.on('chatMsg', self.on_chat_message)
 
     async def on_chat_message(self, data):
+        if dt.datetime.fromtimestamp(data['time']/1000) < self.bot.start_time:
+            return
         for cc in self.commands:
             asyncio.create_task(cc(data))
 
@@ -19,7 +22,7 @@ class ChatCommand:
         self.min_rank = 3
         self.user_cooldown = dt.timedelta(seconds=0)
         self.global_cooldown = dt.timedelta(seconds=0)
-        self.last_uses = defaultdict(lambda: dt.datetime.fromtimestamp(0))
+        self.last_uses = collections.defaultdict(lambda: dt.datetime.fromtimestamp(0))
         self.last_global_use = dt.datetime.fromtimestamp(0)
 
     async def __call__(self, *args, **kwargs): return await self.on_chat_message(*args, **kwargs)

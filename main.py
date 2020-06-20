@@ -24,12 +24,9 @@ async def main():
 
     db_config = CONFIG['database']
     await bot.add_db(db_config['username'], db_config['password'], db_config['database'], db_config['host'])
-
     
     discord_config = CONFIG['discord']
-    print('llllllllllllllllllllllllllllll')
     await bot.add_discord(discord_config['token'])
-    print('#######################################')
     bot.discord.del_vids_channel = discord_config['deleted-vids-channel']
     
     await bot.start()

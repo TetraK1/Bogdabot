@@ -27,7 +27,6 @@ class Bot:
         self.playlist = Playlist(self)
         self.db = None
         self.discord = None
-        #Used to check whether the bot has logged in and processed old chat messages
         self.chat_commands = ChatCommands(self)
         #start_time stores when the bot connected to the room, so we can know
         #which chat messages are old and shouldn't be processed
@@ -35,15 +34,17 @@ class Bot:
 
     async def start(self):
         self.logger.info('Starting bot')
-        self.start_time = dt.datetime.now()
         await self.connect(self.server)
         await self.login(self.username, self.password)
         await self.join_channel(self.channel)
         await self.send_chat_message('Now handling commands')
+        self.start_time = dt.datetime.now()
+        self.logger.info('Bot started')
 
     async def connect(self, server):
         self.logger.info('Connecting to ' + server)
         await self.socket.connect(server)
+        self.logger.info('Connected to ' + server)
 
     async def join_channel(self, channel):
         self.logger.info('Joining channel ' + channel)
@@ -62,15 +63,14 @@ class Bot:
         await self.socket.emit('pm', data)
 
     async def add_db(self, username, password, database, host):
-        self.db = db.PostgresBotDB(self)
-        await self.db.start(username, password, database, host)
+        botdb = db.PostgresBotDB(self)
+        await botdb.start(username, password, database, host)
+        self.db = botdb
 
     async def add_discord(self, token):
-        self.discord = DiscordClient(self)
-        await self.discord.start(token)
-
-    async def setup_post_handlers(self):
-        self.on('chatMsg', self.chat_commands.on_chat_message)
+        dc = DiscordClient(self)
+        await dc.start(token)
+        self.discord = dc
 
     def on(self, event, handler):
         #handler needs to be async

@@ -34,10 +34,10 @@ class ChatCommand:
 
     def check(self, data):
         msg = data['msg']
-        name = data['username'].lower()
+        name = data['username']
         args = msg.split(' ')
         if args[0].lower() != self.command_name.lower(): return False
-        if self.bot.userlist.get_user_by_name(name).rank < self.min_rank: return False
+        if self.bot.userlist[name].rank < self.min_rank: return False
         if not dt.datetime.now() - self.last_global_use > self.global_cooldown: return False
         if not dt.datetime.now() - self.last_uses[name] > self.user_cooldown: return False
         return True
@@ -59,6 +59,9 @@ class QuoteCommand(ChatCommand):
         #self.min_rank = 1
 
     async def command(self, data):
+        if self.bot.db is None:
+            await self.bot.send_chat_message('Database not connected')
+            return True
         try:
             name = data['msg'].split(' ')[1]
         except IndexError: return False

@@ -2,20 +2,37 @@ import socketio
 import asyncio
 import json
 import logging
-from logging import DEBUG, INFO, WARN
 
 from bot import Bot
 from db import PostgresBotDB
 import userlist
 
-logging.basicConfig(level=logging.INFO)
-logging.getLogger('engineio').setLevel(WARN)
-logging.getLogger('socketio').setLevel(WARN)
+#this should get moved to an INI file of a the format used by the logging library
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+
+fh = logging.FileHandler('log.txt', mode='w')
+fh.setLevel(logging.INFO)
+
+formatter = logging.Formatter(
+    fmt='%(asctime)s-%(levelname)s-%(name)s-%(message)s',
+    datefmt='%y.%m.%d %H:%M:%S'
+)
+ch.setFormatter(formatter), fh.setFormatter(formatter)
+
+logger = logging.getLogger()
+logger.addHandler(ch)
+logger.addHandler(fh)
+logger.setLevel(logging.INFO)
+
+logging.getLogger('engineio').setLevel(logging.WARN)
+logging.getLogger('socketio').setLevel(logging.WARN)
 #logging.getLogger('bot').setLevel(WARN)
-logging.getLogger('db').setLevel(INFO)
+#logging.getLogger('db').setLevel(INFO)
 #logging.getLogger('userlist').setLevel(WARN)
 #logging.getLogger('playlist').setLevel(WARN)
 #logging.getLogger('discord').setLevel(DEBUG)
+
 
 with open('config.json') as f: CONFIG = json.loads(f.read())
 

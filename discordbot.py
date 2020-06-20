@@ -34,19 +34,19 @@ class DiscordClient(discord.Client):
         except KeyError: return
 
         title = data['msg'].split('"', 1)[1].rsplit('"', 1)[0]
-
-        async with self.bot.db.lock:
-            async with self.bot.db.db.transaction():
-                x = await self.bot.db.db.fetch("""select videos.type, videos.id, videos.title, video_adds.from_username
-                    from videos
-                    inner join video_adds
-                    on videos.id = video_adds.video_id and videos.type = video_adds.video_type
-                    /*where videos.title = $1*/
-                    where videos.title = $1
-                    order by video_adds.timestamp desc limit 1
-                    """, 
-                    title
-                )
+        if self.bot.db is not None:
+            async with self.bot.db.pool.acquire() as connection:
+                async with connection.transaction():
+                    x = await connection.fetch("""select videos.type, videos.id, videos.title, video_adds.from_username
+                        from videos
+                        inner join video_adds
+                        on videos.id = video_adds.video_id and videos.type = video_adds.video_type
+                        /*where videos.title = $1*/
+                        where videos.title = $1
+                        order by video_adds.timestamp desc limit 1
+                        """, 
+                        title
+                    )
         x = x[0]
         embed = discord.Embed()
         embed.title = title

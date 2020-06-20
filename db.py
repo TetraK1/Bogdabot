@@ -14,9 +14,8 @@ class PostgresBotDB:
     def __init__(self, bot):
         self.bot = bot
         self.logger = logger
-        
-        #lock is hacky and probably needs to be changed
-        self.lock = asyncio.Lock()
+        #connection pool, created in start()
+        self.pool = None
 
         #used in tracking which videos are skipped
         #important to note there may be data race issues
@@ -35,15 +34,15 @@ class PostgresBotDB:
 
     async def start(self, user, password, database, host):
         self.logger.info('Connecting to database ' + database + '@' + host)
-        self.db = await asyncpg.connect(user=user, password=password, database=database, host=host)
+        self.pool = await asyncpg.create_pool(user=user, password=password, database=database, host=host)
         self.logger.info('Connected to database')
         await self.create_tables()
         return self
 
     async def create_tables(self):
-        async with self.lock:
+        async with self.pool.acquire() as connection:
             self.logger.debug('Creating tables')
-            async with self.db.transaction():
+            async with connection.transaction():
                 sql_setup_dir = pathlib.Path('sql/setup').resolve()
                 self.logger.info(f'Looking for setup queries in {sql_setup_dir}')
                 #Run all queries in sql/setup/tables, then run all queries in sql/setup/views
@@ -54,14 +53,14 @@ class PostgresBotDB:
                             if fp.suffix != '.sql': continue
                             with open(fp) as f: query = f.read()
                             self.logger.debug(f'Running query {fp}')
-                            await self.db.execute(query)
+                            await connection.execute(query)
 
     async def log_event(self, timestamp, event, data):
         self.logger.debug('Logging event ' + str(event) + ': ' + str(data))
         data = json.dumps(data)
-        async with self.lock:
-            async with self.db.transaction():
-                await self.db.execute('INSERT INTO events VALUES($1, $2, $3)', timestamp, event, data)
+        async with self.pool.acquire() as connection:
+            async with connection.transaction():
+                await connection.execute('INSERT INTO events VALUES($1, $2, $3)', timestamp, event, data)
 
     def patch_trigger(self):
         """Place a hook in the bot's socket's trigger_event

@@ -36,6 +36,7 @@ class DiscordClient(discord.Client):
         if not self.bot.userlist[data['username']].rank >= 2: return
 
         title = data['msg'].split('"', 1)[1].rsplit('"', 1)[0]
+
         async with self.bot.db.pool.acquire() as connection:
             async with connection.transaction():
                 db_result = await connection.fetch("""select videos.video_type, videos.video_id, videos.title, video_adds.from_username
@@ -48,16 +49,17 @@ class DiscordClient(discord.Client):
                     """, 
                     title
                 )
-        from_username = db_result[0]['from_username']
+                db_result = db_result[0] #grab the first (and only) row
+        from_username = db_result['from_username']
         embed = discord.Embed()
         embed.title = title
         embed.type = 'rich'
         embed.set_author(name='Video deleted')
-        embed.color = 0xFF6666
+        embed.colour = 0xFF6666
         embed.add_field(name='Posted by', value=from_username)
         embed.add_field(name='Deleted by', value=data['username'])
 
-        if x['type'] == 'yt':
+        if db_result['type'] == 'yt':
             embed.description = 'https://youtu.be/' + x['id']
 
         await self.del_vids_channel.send(embed=embed)

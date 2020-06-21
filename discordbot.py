@@ -52,11 +52,11 @@ class DiscordClient(discord.Client):
 
         async with self.bot.db.pool.acquire() as connection:
             async with connection.transaction():
-                db_result = await connection.fetch("""select videos.video_type, videos.video_id, videos.title, video_adds.from_username
+                db_result = await connection.fetch("""select videos.video_type, videos.video_id, videos.video_title, video_adds.from_username
                     from videos
                     inner join video_adds
                     on videos.video_id = video_adds.video_id and videos.video_type = video_adds.video_type
-                    where videos.title = $1
+                    where videos.video_title = $1
                     order by video_adds.timestamp desc 
                     limit 1
                     """, 

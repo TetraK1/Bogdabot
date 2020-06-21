@@ -44,11 +44,11 @@ async def main():
     
     discord_config = CONFIG['discord']
     await bot.add_discord(discord_config['token'])
-    print(type(discord_config['deleted-vids-channel']))
     await bot.discord.add_del_vids_channel(discord_config['deleted-vids-channel'])
     
     await bot.start()
     await bot.socket.wait()
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())

@@ -7,15 +7,14 @@ from bot import Bot
 from db import PostgresBotDB
 import userlist
 
-#this should get moved to an INI file of a the format used by the logging library
+#logging setup should get moved to an INI file of the format used by the
+#logging library
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
 
 fh = logging.FileHandler('log.txt', mode='w')
-fh.setLevel(logging.INFO)
 
 formatter = logging.Formatter(
-    fmt='%(asctime)s-%(levelname)s-%(name)s-%(message)s',
+    fmt='[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s',
     datefmt='%y.%m.%d %H:%M:%S'
 )
 ch.setFormatter(formatter), fh.setFormatter(formatter)
@@ -27,11 +26,12 @@ logger.setLevel(logging.INFO)
 
 logging.getLogger('engineio').setLevel(logging.WARN)
 logging.getLogger('socketio').setLevel(logging.WARN)
+#logging.getLogger('discordbot').setLevel(logging.DEBUG)
+logging.getLogger('discord').setLevel(logging.WARN)
 #logging.getLogger('bot').setLevel(WARN)
 #logging.getLogger('db').setLevel(INFO)
 #logging.getLogger('userlist').setLevel(WARN)
 #logging.getLogger('playlist').setLevel(WARN)
-#logging.getLogger('discord').setLevel(DEBUG)
 
 
 with open('config.json') as f: CONFIG = json.loads(f.read())
@@ -44,7 +44,8 @@ async def main():
     
     discord_config = CONFIG['discord']
     await bot.add_discord(discord_config['token'])
-    bot.discord.del_vids_channel = discord_config['deleted-vids-channel']
+    print(type(discord_config['deleted-vids-channel']))
+    await bot.discord.add_del_vids_channel(discord_config['deleted-vids-channel'])
     
     await bot.start()
     await bot.socket.wait()

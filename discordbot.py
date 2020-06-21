@@ -22,12 +22,25 @@ class DiscordClient(discord.Client):
         self.bot.on('chatMsg', self.handle_chatMsg)
         asyncio.create_task(super().start(token))
 
+    async def add_del_vids_channel(self, channel_id: int):
+        '''Add channel id for reporting deleted videos.'''
+        if not self.is_ready():
+            asyncio.create_task(self.add_del_vids_channel(channel_id))
+            return
+        self.logger.debug(f'Getting channel {channel_id}')
+        self.del_vids_channel = self.get_channel(channel_id)
+        if self.del_vids_channel is None:
+            self.logger.error(f'Discord channel {channel_id} not found')
+            return
+        self.logger.info('Connected to deleted-vids channel')
+
     async def handle_vid_delete(self, data):
         self.last_deleted_uid = data['uid']
 
     async def handle_chatMsg(self, data):
         #on bot event 'chatMsg'
-        if self.bot.db is None: return
+        if not self.is_ready(): return
+        if not self.bot.db: return
         if not self.del_vids_channel: return
         if data['msg'].split(' ', 1)[0] != 'deleted': return
         try:

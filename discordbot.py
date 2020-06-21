@@ -57,7 +57,7 @@ class DiscordClient(discord.Client):
                     inner join video_adds
                     on videos.video_id = video_adds.video_id and videos.video_type = video_adds.video_type
                     where videos.video_title = $1
-                    order by video_adds.timestamp desc 
+                    order by video_adds.ts desc 
                     limit 1
                     """, 
                     title

@@ -72,7 +72,7 @@ class DiscordClient(discord.Client):
         embed.add_field(name='Posted by', value=from_username)
         embed.add_field(name='Deleted by', value=data['username'])
 
-        if db_result['type'] == 'yt':
-            embed.description = 'https://youtu.be/' + x['id']
+        if db_result['video_type'] == 'yt':
+            embed.description = 'https://youtu.be/' + db_result['video_id']
 
         await self.del_vids_channel.send(embed=embed)

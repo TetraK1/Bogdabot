@@ -27,7 +27,7 @@ class Playlist:
         self.bot.socket.on('moveVide', self.on_moveVideo)
         self.logger = logging.getLogger(__name__)
 
-    async def load_from_data(self, data):
+    def load_from_data(self, data):
         '''Load playlist data from the "playlist" event data.
         
         Data takes the form of a list of video objects'''
@@ -47,10 +47,10 @@ class Playlist:
             if video.uid == uid:
                 return video
 
-    async def on_playlist(self, data): 
-        return await self.load_from_data(data)
+    def on_playlist(self, data): 
+        return self.load_from_data(data)
 
-    async def on_queue(self, data):
+    def on_queue(self, data):
         '''{"item":{"media":{"id":"qXD9HnrNrvk","title":"Expert Wasted Entire Life Studying Anteaters","seconds":175,"duration":"02:55","type":"yt","meta":{}},"uid":16345,"temp":true,"queueby":"AsKdf"},"after":16344}'''
         new_video = Video(data=data['item'])
         after_video = self.get_by_uid(data['after'])
@@ -59,13 +59,13 @@ class Playlist:
         self.logger.info(f'Video "{new_video.title}" added to {video_index}')
         self.logger.debug('Playlist is ' + str(len(self.videos)) + ' long')
     
-    async def on_delete(self, data):
+    def on_delete(self, data):
         video = self.get_by_uid(data['uid'])
         self.videos.remove(video)
         self.logger.info(f'Video "{video.title}" deleted')
         self.logger.debug(f'Playlist is {len(self.videos)} long')
 
-    async def on_moveVideo(self, data):
+    def on_moveVideo(self, data):
         video = self.get_by_uid(data['from'])
         after_video = self.get_by_uid(data['after'])
         old_index = self.videos.index(video)

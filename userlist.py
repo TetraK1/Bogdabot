@@ -32,17 +32,17 @@ class Userlist:
 
     def __getitem__(self, key): return self.users[key]
 
-    async def load_from_userlist(self, data):
+    def load_from_userlist(self, data):
         logger.info('Loading userlist')
         for user_data in data:
             user = User.create_from_data(user_data)
             self.users[user.name] = user
 
-    async def on_user_leave(self, data):
+    def on_user_leave(self, data):
         logger.info(data['name'] + ' left')
         del self.users[data['name']]
 
-    async def on_add_user(self, data):
+    def on_add_user(self, data):
         logger.info(data['name'] + ' joined')
         user = User.create_from_data(data)
         self.users[user.name] = user

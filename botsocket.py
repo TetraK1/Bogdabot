@@ -47,14 +47,14 @@ class AsyncClient:
         if '*' not in self.handlers: return
         for f in self.handlers['*']:
             self.logger.debug(f'Firing wilcard handler {f.__name__} in response to {event}')
-            asyncio.create_task(f(event, data))
+            asyncio.create_task(asyncio.coroutine(f)(event, data))
 
     async def trigger_event(self, event, data=None):
         self.trigger_wildcard(event, data)
         if event not in self.handlers: return
         for f in self.handlers[event]:
             self.logger.debug(f'Firing handler {f.__name__} in response to {event}')
-            asyncio.create_task(f(data))
+            asyncio.create_task(asyncio.coroutine(f)(data))
 
     async def connect(self, *args, **kwargs): 
         return await self.siosock.connect(*args, **kwargs)

@@ -2,6 +2,8 @@ import socketio
 import asyncio
 import json
 import logging
+import urllib.parse
+import urllib.request
 
 from bot import Bot
 from db import PostgresBotDB
@@ -24,7 +26,7 @@ logger.addHandler(ch)
 logger.addHandler(fh)
 logger.setLevel(logging.INFO)
 
-logging.getLogger('botsocket').setLevel(logging.DEBUG)
+#logging.getLogger('botsocket').setLevel(logging.DEBUG)
 logging.getLogger('engineio').setLevel(logging.WARN)
 logging.getLogger('socketio').setLevel(logging.WARN)
 #logging.getLogger('discordbot').setLevel(logging.DEBUG)
@@ -37,8 +39,21 @@ logging.getLogger('socketio').setLevel(logging.WARN)
 
 with open('config.json') as f: CONFIG = json.loads(f.read())
 
+def get_room_server(main_server, room):
+    '''main_server should include scheme e.g. "http://cytu.be"'''
+    url = urllib.parse.urlparse(main_server)
+    url = urllib.parse.ParseResult(url.scheme, url.netloc, f'/socketconfig/{room}.json', url.params, url.query, url.fragment)
+    url = urllib.parse.urlunparse(url)
+    with urllib.request.urlopen(url) as response:
+        r = json.loads(response.read())
+    return r['servers'][0]['url']
+
 async def main():
-    bot = Bot(CONFIG['server'], CONFIG['channel'], CONFIG['username'], CONFIG['password'])
+    logger.info(f'Retrieving channel server from {CONFIG["server"]}')
+    room_server = await loop.run_in_executor(None, get_room_server, CONFIG['server'], CONFIG['channel'])
+    logger.info(f'Room {CONFIG["channel"]} on server {room_server}')
+
+    bot = Bot(room_server, CONFIG['channel'], CONFIG['username'], CONFIG['password'])
 
     db_config = CONFIG['database']
     await bot.add_db(db_config['username'], db_config['password'], db_config['database'], db_config['host'])

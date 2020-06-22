@@ -2,8 +2,8 @@ import asyncio
 import datetime as dt
 import logging
 import json
-import socketio
 
+import botsocket
 from userlist import Userlist, User
 from chatcommands import ChatCommands
 from events import Event
@@ -21,7 +21,7 @@ class Bot:
         self.logger = logging.getLogger(__name__)
         #socket should probably be split out into a subclass to make the
         #trigger patching in db easier and whatever else
-        self.socket = socketio.AsyncClient()
+        self.socket = botsocket.AsyncClient()
         self.events = {}
         self.userlist = Userlist(self)
         self.playlist = Playlist(self)
@@ -71,14 +71,3 @@ class Bot:
         dc = DiscordClient(self)
         await dc.start(token)
         self.discord = dc
-
-    def on(self, event, handler):
-        #handler needs to be async
-        if event not in self.events:
-            self.events[event] = Event()
-            self.socket.on(event, self.events[event].trigger)
-        self.events[event].register(handler)
-
-    def off(self, event, handler=None):
-        if handler is None: self.events[event].remove_all()
-        else: self.events[event].remove(handler)

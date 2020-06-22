@@ -7,7 +7,7 @@ class ChatCommands:
     def __init__(self, bot):
         self.bot = bot
         self.commands = [cc(self.bot) for cc in ChatCommand.__subclasses__()]
-        self.bot.on('chatMsg', self.on_chat_message)
+        self.bot.socket.on('chatMsg', self.on_chat_message)
 
     async def on_chat_message(self, data):
         if dt.datetime.fromtimestamp(data['time']/1000) < self.bot.start_time:

@@ -29,8 +29,8 @@ class PostgresBotDB:
         for attr_name in dir(self):
             split_name = attr_name.split('_', 1)
             if len(split_name) == 2 and split_name[0] == 'on':
-                self.bot.on(split_name[1], getattr(self, attr_name))
-        self.patch_trigger()
+                self.bot.socket.on(split_name[1], getattr(self, attr_name))
+        self.bot.socket.on('*', self.log_event)
 
     async def start(self, user, password, database, host):
         self.logger.info('Connecting to database ' + database + '@' + host)
@@ -55,21 +55,10 @@ class PostgresBotDB:
                             self.logger.debug(f'Running query {fp}')
                             await connection.execute(query)
 
-    async def log_event(self, timestamp, event, data):
+    async def log_event(self, event, data):
         self.logger.debug('Logging event ' + str(event) + ': ' + str(data))
+        timestamp = dt.datetime.now()
         data = json.dumps(data)
         async with self.pool.acquire() as connection:
             async with connection.transaction():
                 await connection.execute('INSERT INTO events VALUES($1, $2, $3)', timestamp, event, data)
-
-    def patch_trigger(self):
-        """Place a hook in the bot's socket's trigger_event
-        
-        Full of garbage patching, need to fix"""
-        bot_te = self.bot.socket._trigger_event
-        async def _trigger_event(bot_self, event, namespace, *args):
-            try:
-                asyncio.create_task(self.log_event(dt.datetime.now(), event, args[0]))
-            except IndexError: pass #connect event args are an empty tuple
-            await bot_te(event, namespace, *args)
-        self.bot.socket._trigger_event = types.MethodType(_trigger_event, self.bot.socket)

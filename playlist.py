@@ -21,10 +21,10 @@ class Playlist:
     def __init__(self, bot):
         self.videos = []
         self.bot = bot
-        self.bot.on('playlist', self.on_playlist)
-        self.bot.on('queue', self.on_queue)
-        self.bot.on('delete', self.on_delete)
-        self.bot.on('moveVide', self.on_moveVideo)
+        self.bot.socket.on('playlist', self.on_playlist)
+        self.bot.socket.on('queue', self.on_queue)
+        self.bot.socket.on('delete', self.on_delete)
+        self.bot.socket.on('moveVide', self.on_moveVideo)
         self.logger = logging.getLogger(__name__)
 
     async def load_from_data(self, data):

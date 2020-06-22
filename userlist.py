@@ -26,23 +26,23 @@ class Userlist:
     def __init__(self, bot):
         self.bot = bot
         self.users = {}
-        self.bot.on('userlist', self.load_from_userlist)
-        self.bot.on('userLeave', self.on_user_leave)
-        self.bot.on('addUser', self.on_add_user)
+        self.bot.socket.on('userlist', self.load_from_userlist)
+        self.bot.socket.on('userLeave', self.on_user_leave)
+        self.bot.socket.on('addUser', self.on_add_user)
 
     def __getitem__(self, key): return self.users[key]
 
-    def load_from_userlist(self, data):
+    async def load_from_userlist(self, data):
         logger.info('Loading userlist')
         for user_data in data:
             user = User.create_from_data(user_data)
             self.users[user.name] = user
 
-    def on_user_leave(self, data):
+    async def on_user_leave(self, data):
         logger.info(data['name'] + ' left')
         del self.users[data['name']]
 
-    def on_add_user(self, data):
+    async def on_add_user(self, data):
         logger.info(data['name'] + ' joined')
         user = User.create_from_data(data)
         self.users[user.name] = user

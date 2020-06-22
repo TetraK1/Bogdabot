@@ -18,8 +18,8 @@ class DiscordClient(discord.Client):
 
     async def start(self, token):
         self.logger.info('Starting discord')
-        self.bot.on('delete', self.handle_vid_delete)
-        self.bot.on('chatMsg', self.handle_chatMsg)
+        self.bot.socket.on('delete', self.handle_vid_delete)
+        self.bot.socket.on('chatMsg', self.handle_chatMsg)
         asyncio.create_task(super().start(token))
 
     async def add_del_vids_channel(self, channel_id: int):

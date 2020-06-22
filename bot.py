@@ -6,7 +6,6 @@ import json
 import botsocket
 from userlist import Userlist, User
 from chatcommands import ChatCommands
-from events import Event
 from playlist import Playlist
 from discordbot import DiscordClient
 import db

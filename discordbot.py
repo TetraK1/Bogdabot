@@ -4,8 +4,6 @@ import json
 import datetime as dt
 import logging
 
-with open('config.json') as f: CONFIG = json.loads(f.read())
-
 logger = logging.getLogger(__name__)
 
 class DiscordClient(discord.Client):

@@ -13,8 +13,11 @@ import userlist
 with open('logconfig.yml') as f: lc = yaml.safe_load(f.read())
 logging.config.dictConfig(lc)
 logger = logging.getLogger()
-
-with open('config.json') as f: CONFIG = json.loads(f.read())
+try:
+    with open('config.yml') as f: CONFIG = yaml.safe_load(f.read())
+except FileNotFoundError:
+    with open('config.json') as f: CONFIG = yaml.safe_load(f.read())
+    logger.warn('Config.json should be moved to config.yml')
 
 def get_room_server(main_server, room):
     '''main_server should include scheme e.g. "http://cytu.be"'''

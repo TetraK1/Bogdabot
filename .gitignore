@@ -1,6 +1,6 @@
 .vscode
 bot.db
-config.json
+config.yml
 
 ## For Python
 # Byte-compiled / optimized / DLL files

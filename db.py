@@ -1,12 +1,10 @@
 import asyncio
-import aiosqlite
 import asyncpg
 import datetime as dt
 import json
 import logging
 import os
 import pathlib
-import types
 
 logger = logging.getLogger(__name__)
 

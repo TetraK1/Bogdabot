@@ -1,4 +1,3 @@
-import socketio
 import asyncio
 import json
 import logging

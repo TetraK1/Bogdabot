@@ -15,7 +15,14 @@ handlers:
     level: NOTSET
     formatter: standard
     filename: log.txt
-    mode: w
+    mode: a
+  # logfile:
+  #   class: logging.handlers.RotatingFileHandler
+  #   level: NOTSET
+  #   formatter: standard
+  #   filename: log.log
+  #   maxBytes: 10000
+  #   backupCount: 5
 root:
   level: INFO
   handlers:
@@ -23,9 +30,6 @@ root:
     - logfile
   propagate: yes
 loggers:
-  root:
-    level: INFO
-    propagate: yes
   bot:
     level: NOTSET
     propagate: yes

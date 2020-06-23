@@ -1,40 +1,18 @@
 import asyncio
 import json
 import logging
+import logging.config
 import urllib.parse
 import urllib.request
+import yaml
 
 from bot import Bot
 from db import PostgresBotDB
 import userlist
 
-#logging setup should get moved to an INI file of the format used by the
-#logging library
-ch = logging.StreamHandler()
-
-fh = logging.FileHandler('log.txt', mode='w')
-
-formatter = logging.Formatter(
-    fmt='[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s',
-    datefmt='%y.%m.%d %H:%M:%S'
-)
-ch.setFormatter(formatter), fh.setFormatter(formatter)
-
+with open('logconfig.yml') as f: lc = yaml.safe_load(f.read())
+logging.config.dictConfig(lc)
 logger = logging.getLogger()
-logger.addHandler(ch)
-logger.addHandler(fh)
-logger.setLevel(logging.INFO)
-
-#logging.getLogger('botsocket').setLevel(logging.DEBUG)
-logging.getLogger('engineio').setLevel(logging.WARN)
-logging.getLogger('socketio').setLevel(logging.WARN)
-#logging.getLogger('discordbot').setLevel(logging.DEBUG)
-#logging.getLogger('discord').setLevel(logging.WARN)
-#logging.getLogger('bot').setLevel(WARN)
-#logging.getLogger('db').setLevel(INFO)
-#logging.getLogger('userlist').setLevel(WARN)
-#logging.getLogger('playlist').setLevel(WARN)
-
 
 with open('config.json') as f: CONFIG = json.loads(f.read())
 

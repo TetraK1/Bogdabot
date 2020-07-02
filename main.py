@@ -10,14 +10,21 @@ from bot import Bot
 from db import PostgresBotDB
 import userlist
 
-with open('logconfig.yml') as f: lc = yaml.safe_load(f.read())
-logging.config.dictConfig(lc)
-logger = logging.getLogger()
-try:
-    with open('config.yml') as f: CONFIG = yaml.safe_load(f.read())
-except FileNotFoundError:
-    with open('config.json') as f: CONFIG = yaml.safe_load(f.read())
-    logger.warn('Config.json should be moved to config.yml')
+import prompt_toolkit.patch_stdout
+import prompt_toolkit.shortcuts
+
+async def interactive_shell():
+
+    logger = logging.getLogger('cmd')
+    session = prompt_toolkit.shortcuts.PromptSession('cmd: ')
+
+    while True:
+        try:
+            result = await session.prompt_async()
+            logger.info(f'Running command "{result}"')
+        except (EOFError, KeyboardInterrupt):
+            loop.stop()
+            return
 
 def get_room_server(main_server, room):
     '''main_server should include scheme e.g. "http://cytu.be"
@@ -50,4 +57,17 @@ async def main():
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
+
+    with prompt_toolkit.patch_stdout.patch_stdout():
+        logger = logging.getLogger()
+
+        with open('logconfig.yml') as f: lc = yaml.safe_load(f.read())
+        logging.config.dictConfig(lc)
+        try:
+            with open('config.yml') as f: CONFIG = yaml.safe_load(f.read())
+        except FileNotFoundError:
+            with open('config.json') as f: CONFIG = yaml.safe_load(f.read())
+        logger.warn('Config.json should be moved to config.yml')
+
+        loop.create_task(interactive_shell())
+        loop.run_until_complete(main())

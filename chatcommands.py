@@ -118,15 +118,15 @@ class RollCommand(ChatCommand):
         result = random.randint(0, 10**size - 1)
         result = str(result).zfill(size)
 
-        rev_result = result[::-1]
         consec = 1
-        for i in range(1, len(rev_result)):
-            if rev_result[i-1] != rev_result[i]: 
-                break
-            consec += 1
+        digit = result[-1]
+        for i in result[:-1][::-1]: #cut off last digit then reverse
+            if i != digit: break
+            else: consec += 1
+
         if consec > 1: 
             msg = f'[3d]{data["username"]} rolled {self.get_names[consec]}: {result}!! [/3d] /go'
-        elif random.random() < 0.01:
+        elif random.random() < 1:
             msg = f'[3d]{data["username"]} rolled SINGLES!! [/3d] /feelsmeh /mehfeels'
         else:
             msg = f'{data["username"]} rolled: {result}'

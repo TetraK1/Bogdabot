@@ -1,5 +1,5 @@
 version: 1
-disable_existing_loggers: true
+disable_existing_loggers: false
 formatters:
   standard:
     format: "[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s"
@@ -16,13 +16,6 @@ handlers:
     formatter: standard
     filename: log.txt
     mode: a
-  # logfile:
-  #   class: logging.handlers.RotatingFileHandler
-  #   level: NOTSET
-  #   formatter: standard
-  #   filename: log.log
-  #   maxBytes: 10000
-  #   backupCount: 5
 root:
   level: INFO
   handlers:
@@ -42,6 +35,9 @@ loggers:
   playlist:
     level: NOTSET
     propagate: yes
+  cc:
+    level: NOTSET
+    propagage: yes
   db:
     level: NOTSET
     propagate: yes

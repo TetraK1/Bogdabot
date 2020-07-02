@@ -20,7 +20,10 @@ except FileNotFoundError:
     logger.warn('Config.json should be moved to config.yml')
 
 def get_room_server(main_server, room):
-    '''main_server should include scheme e.g. "http://cytu.be"'''
+    '''main_server should include scheme e.g. "http://cytu.be"
+    
+    is blocking
+    '''
     url = urllib.parse.urlparse(main_server)
     url = urllib.parse.ParseResult(url.scheme, url.netloc, f'/socketconfig/{room}.json', url.params, url.query, url.fragment)
     url = urllib.parse.urlunparse(url)

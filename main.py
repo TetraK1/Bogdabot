@@ -13,7 +13,15 @@ import userlist
 import prompt_toolkit.patch_stdout
 import prompt_toolkit.shortcuts
 
+loop = asyncio.get_event_loop()
+logger = logging.getLogger()
+
 async def interactive_shell():
+
+    def stop():
+        tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+        for t in tasks: t.cancel()
+        loop.stop()
 
     logger = logging.getLogger('cmd')
     session = prompt_toolkit.shortcuts.PromptSession('cmd: ')
@@ -22,9 +30,13 @@ async def interactive_shell():
         try:
             result = await session.prompt_async()
             logger.info(f'Running command "{result}"')
+            if result == 'exit':
+                stop()
+                break
+
         except (EOFError, KeyboardInterrupt):
-            loop.stop()
-            return
+            stop()
+            break
 
 def get_room_server(main_server, room):
     '''main_server should include scheme e.g. "http://cytu.be"
@@ -53,13 +65,10 @@ async def main():
     await bot.discord.add_del_vids_channel(discord_config['deleted-vids-channel'])
     
     await bot.start()
-    await bot.socket.wait()
+    asyncio.create_task(bot.socket.wait())
 
 if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-
     with prompt_toolkit.patch_stdout.patch_stdout():
-        logger = logging.getLogger()
 
         with open('logconfig.yml') as f: lc = yaml.safe_load(f.read())
         logging.config.dictConfig(lc)
@@ -70,4 +79,5 @@ if __name__ == '__main__':
         logger.warn('Config.json should be moved to config.yml')
 
         loop.create_task(interactive_shell())
-        loop.run_until_complete(main())
+        loop.create_task(main())
+        loop.run_forever()

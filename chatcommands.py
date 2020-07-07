@@ -126,8 +126,8 @@ class RollCommand(ChatCommand):
 
         if consec > 1: 
             msg = f'[3d]{data["username"]} rolled {self.get_names[consec]}: {result}!! [/3d] /go'
-        elif random.random() < 1:
-            msg = f'[3d]{data["username"]} rolled SINGLES!! [/3d] /feelsmeh /mehfeels'
+        elif random.random() < 0.01:
+            msg = f'[3d]{data["username"]} rolled SINGLES: {result}!! [/3d] /feelsmeh /mehfeels'
         else:
             msg = f'{data["username"]} rolled: {result}'
 

@@ -16,7 +16,9 @@ class Bot:
         self.channel = channel
         self.username = username
         self.password = password
-
+        try: 
+            with open('state.json') as f: self.state = json.loads(f.read())
+        except: self.state = {}
         self.logger = logging.getLogger(__name__)
         #socket should probably be split out into a subclass to make the
         #trigger patching in db easier and whatever else
@@ -70,3 +72,8 @@ class Bot:
         dc = DiscordClient(self)
         await dc.start(token)
         self.discord = dc
+
+    def write_state(self):
+        self.logger.debug('Writing state')
+        text = json.dumps(self.state, indent=4)
+        with open('state.json', 'w') as f: f.write(text)

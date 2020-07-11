@@ -15,12 +15,21 @@ class ChatCommands:
         if dt.datetime.fromtimestamp(data['time']/1000) < self.bot.start_time:
             return
         for cc in self.commands:
-            asyncio.create_task(cc(data))
+            c = cc.on_chat_message
+            if asyncio.iscoroutine(c) or asyncio.iscoroutinefunction(c):
+                asyncio.create_task(c(data))
+            else:
+                asyncio.get_running_loop().call_soon(c, data)
+
+    def get_command(self, command_name):
+        for cc in self.commands:
+            if cc.command_name == command_name:
+                return cc
 
 class ChatCommand:
     command_name = '' #e.g. $roll
     min_rank = 3
-    user_cooldown = dt.timedelta(minutes=3)
+    user_cooldown = dt.timedelta(minutes=1)
     global_cooldown = dt.timedelta(seconds=0)
 
     def __init__(self, bot):
@@ -68,7 +77,7 @@ class ChatCommand:
 
 class QuoteCommand(ChatCommand):
     command_name = '$quote' #e.g. $roll
-    min_rank = 2
+    min_rank = 3
     user_cooldown = dt.timedelta(seconds=60)
     global_cooldown = dt.timedelta(seconds=0)
 
@@ -89,7 +98,7 @@ class QuoteCommand(ChatCommand):
 
 class RollCommand(ChatCommand):
     command_name = '$roll' #e.g. $roll
-    min_rank = 1
+    min_rank = 3
     user_cooldown = dt.timedelta(seconds=60)
     global_cooldown = dt.timedelta(seconds=0)
 
@@ -132,4 +141,117 @@ class RollCommand(ChatCommand):
             msg = f'{data["username"]} rolled: {result}'
 
         await self.bot.send_chat_message(msg)
+        return True
+
+def adjust_karma(bot, user, adjustment):
+    if 'cc' not in bot.state: bot.state['cc'] = {}
+    if 'karma' not in bot.state['cc']: bot.state['cc']['karma'] = {}
+    karmas = bot.state['cc']['karma']
+    user = user.lower()
+    if user.lower() not in karmas:
+        karmas[user.lower()] = 0
+    karmas[user.lower()] += adjustment
+    #this is blocking the event loop and probably needs to get changed
+    bot.write_state()
+
+def get_karma(bot, user):
+    return bot.state['cc']['karma'][user.lower()]
+
+class Upvote(ChatCommand):
+    command_name = '$upvote' #e.g. $roll
+    min_rank = 1
+    user_cooldown = dt.timedelta(seconds=60)
+    global_cooldown = dt.timedelta(seconds=0)
+
+    async def command(self, data):
+        args = data['msg'].split(' ')
+
+        try: user = args[1]
+        except IndexError: return False
+
+        if user.lower() == data['username'].lower():
+            await self.bot.send_chat_message("You can't upvote yourself.")
+            return False
+
+        adjust_karma(self.bot, user, 1)
+        karma = get_karma(self.bot, user)
+        await self.bot.send_chat_message(f"{user} has {karma} karma.")
+        return True
+
+
+class Downvote(ChatCommand):
+    command_name = '$downvote' #e.g. $roll
+    min_rank = 1
+    user_cooldown = dt.timedelta(seconds=60)
+    global_cooldown = dt.timedelta(seconds=0)
+
+    async def command(self, data):
+        args = data['msg'].split(' ')
+
+        try: user = args[1]
+        except IndexError: return False
+
+        adjust_karma(self.bot, user, -1)
+        karma = get_karma(self.bot, user)
+        await self.bot.send_chat_message(f"{user} has {karma} karma.")
+        return True
+
+class GetKarma(ChatCommand):
+    command_name = '$karma' #e.g. $roll
+    min_rank = 1
+    user_cooldown = dt.timedelta(seconds=60)
+    global_cooldown = dt.timedelta(seconds=0)
+
+    async def command(self, data):
+        args = data['msg'].split(' ')
+
+        try: user = args[1]
+        except IndexError: return False
+
+        try: karma = get_karma(self.bot, user)
+        except KeyError: return False
+        print(type(karma))
+        await self.bot.send_chat_message(f"{user} has {karma} karma.")
+        return True
+
+class SetKarma(ChatCommand):
+    command_name = '$setkarma' #e.g. $roll
+    min_rank = 3
+    user_cooldown = dt.timedelta(seconds=0)
+    global_cooldown = dt.timedelta(seconds=0)
+
+    async def command(self, data):
+        args = data['msg'].split(' ')
+
+        try: user = args[1]
+        except IndexError: return False
+
+        try: karma = get_karma(self.bot, user)
+        except KeyError: karma = 0
+
+        adjust_karma(self.bot, user,  int(args[2]) - karma)
+        karma = get_karma(self.bot, user)
+        await self.bot.send_chat_message(f"{user} has {karma} karma.")
+        return True
+
+class SetRank(ChatCommand):
+    command_name = '$setrank' #e.g. $roll
+    min_rank = 3
+    user_cooldown = dt.timedelta(minutes=0)
+    global_cooldown = dt.timedelta(seconds=0)
+    
+    async def command(self, data):
+        args = data['msg'].split(' ')
+
+        if len(args) < 3: return False
+
+        command = self.bot.chat_commands.get_command(args[1])
+        if command is None: return False
+        
+        try: rank = int(args[2])
+        except ValueError: return False
+
+        command.min_rank = rank
+        logger.info(f'{command.command_name} set to rank {rank}')
+        asyncio.create_task(self.bot.send_chat_message(f'{command.command_name} set to rank {rank}'))
         return True

@@ -28,7 +28,7 @@ async def interactive_shell():
 
     while True:
         try:
-            result = await session.prompt_async()
+            result = await session.prompt_async(set_exception_handler=False)
             logger.info(f'Running command "{result}"')
             if result == 'exit':
                 stop()

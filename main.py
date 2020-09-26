@@ -16,6 +16,8 @@ import prompt_toolkit.shortcuts
 loop = asyncio.get_event_loop()
 logger = logging.getLogger()
 
+bot = None
+
 async def interactive_shell():
 
     def stop():
@@ -33,7 +35,7 @@ async def interactive_shell():
             if result == 'exit':
                 stop()
                 break
-                
+
             if result == 'getplaylist':
                 print('Playlist:')
                 for i, v in enumerate(bot.playlist.videos):
@@ -59,7 +61,7 @@ async def main():
     logger.info(f'Retrieving channel server from {CONFIG["server"]}')
     room_server = await loop.run_in_executor(None, get_room_server, CONFIG['server'], CONFIG['channel'])
     logger.info(f'Room {CONFIG["channel"]} on server {room_server}')
-
+    nonlocal bot
     bot = Bot(room_server, CONFIG['channel'], CONFIG['username'], CONFIG['password'])
 
     db_config = CONFIG['database']

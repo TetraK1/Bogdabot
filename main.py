@@ -33,6 +33,11 @@ async def interactive_shell():
             if result == 'exit':
                 stop()
                 break
+                
+            if result == 'getplaylist':
+                print('Playlist:')
+                for i, v in enumerate(bot.playlist.videos):
+                    print('\t' + str(i) + ':', v.title, '(' + v.id + ')')
 
         except (EOFError, KeyboardInterrupt):
             stop()

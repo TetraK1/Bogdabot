@@ -61,7 +61,7 @@ async def main():
     logger.info(f'Retrieving channel server from {CONFIG["server"]}')
     room_server = await loop.run_in_executor(None, get_room_server, CONFIG['server'], CONFIG['channel'])
     logger.info(f'Room {CONFIG["channel"]} on server {room_server}')
-    nonlocal bot
+    global bot
     bot = Bot(room_server, CONFIG['channel'], CONFIG['username'], CONFIG['password'])
 
     db_config = CONFIG['database']

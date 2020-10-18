@@ -11,6 +11,7 @@ import db
 import discordbot
 import userlist
 import utils
+import shell
 
 import prompt_toolkit.patch_stdout
 import prompt_toolkit.shortcuts
@@ -33,33 +34,6 @@ async def main():
     await bot.start()
     asyncio.create_task(bot.socket.wait())
 
-async def interactive_shell():
-
-    def stop():
-        tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
-        for t in tasks: t.cancel()
-        loop.stop()
-
-    logger = logging.getLogger('cmd')
-    session = prompt_toolkit.shortcuts.PromptSession('cmd: ')
-
-    while True:
-        try:
-            result = await session.prompt_async(set_exception_handler=False)
-            logger.info(f'Running command "{result}"')
-            if result == 'exit':
-                stop()
-                break
-
-            if result == 'getplaylist':
-                print('Playlist:')
-                for i, v in enumerate(bot.playlist.videos):
-                    print('\t' + str(i) + ':', v.title, '(' + v.id + ')')
-
-        except (EOFError, KeyboardInterrupt):
-            stop()
-            break
-
 if __name__ == '__main__':
     with prompt_toolkit.patch_stdout.patch_stdout():
 
@@ -71,6 +45,6 @@ if __name__ == '__main__':
             with open('config.json') as f: CONFIG = yaml.safe_load(f.read())
         logger.warn('Config.json should be moved to config.yml')
 
-        loop.create_task(interactive_shell())
+        loop.create_task(shell.interactive_shell(bot, loop))
         loop.create_task(main())
         loop.run_forever()

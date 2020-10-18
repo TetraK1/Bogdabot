@@ -20,6 +20,19 @@ logger = logging.getLogger()
 
 bot = None
 
+async def main():
+    logger.info(f'Retrieving channel server from {CONFIG["server"]}')
+    room_server = await loop.run_in_executor(None, utils.get_room_server, CONFIG['server'], CONFIG['channel'])
+    logger.info(f'Room {CONFIG["channel"]} on server {room_server}')
+    global bot
+    bot = Bot(room_server, CONFIG['channel'], CONFIG['username'], CONFIG['password'])
+
+    await db.init(bot, CONFIG)
+    await discordbot.init(bot, CONFIG)
+    
+    await bot.start()
+    asyncio.create_task(bot.socket.wait())
+
 async def interactive_shell():
 
     def stop():
@@ -46,19 +59,6 @@ async def interactive_shell():
         except (EOFError, KeyboardInterrupt):
             stop()
             break
-
-async def main():
-    logger.info(f'Retrieving channel server from {CONFIG["server"]}')
-    room_server = await loop.run_in_executor(None, utils.get_room_server, CONFIG['server'], CONFIG['channel'])
-    logger.info(f'Room {CONFIG["channel"]} on server {room_server}')
-    global bot
-    bot = Bot(room_server, CONFIG['channel'], CONFIG['username'], CONFIG['password'])
-
-    await db.init(bot, CONFIG)
-    await discordbot.init(bot, CONFIG)
-    
-    await bot.start()
-    asyncio.create_task(bot.socket.wait())
 
 if __name__ == '__main__':
     with prompt_toolkit.patch_stdout.patch_stdout():

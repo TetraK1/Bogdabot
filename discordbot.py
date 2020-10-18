@@ -38,7 +38,7 @@ class DiscordClient(discord.Client):
     async def handle_chatMsg(self, data):
         #on bot event 'chatMsg'
         if not self.is_ready(): return
-        if not self.bot.db: return
+        if 'db' not in self.bot.modules or not self.bot.modules['db']: return
         if not self.del_vids_channel: return
         if data['msg'].split(' ', 1)[0] != 'deleted': return
         try:
@@ -74,3 +74,10 @@ class DiscordClient(discord.Client):
             embed.description = 'https://youtu.be/' + db_result['video_id']
 
         await self.del_vids_channel.send(embed=embed)
+
+
+async def init(bot, config_file):
+    config = config_file['modules']['discord']
+    bot.modules['discord'] = DiscordClient(bot)
+    await bot.modules['discord'].start(config['token'])
+    await bot.modules['discord'].add_del_vids_channel(config['deleted-vids-channel'])

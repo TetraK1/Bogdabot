@@ -36,10 +36,13 @@ async def interactive_shell():
                 stop()
                 break
 
+            if result.split(' ')[0] == 'say':
+                loop.create_task(bot.send_chat_message(' '.join(result.split(' ')[1:])))
+
             if result == 'getplaylist':
                 print('Playlist:')
                 for i, v in enumerate(bot.playlist.videos):
-                    print('\t' + str(i) + ':', v.title, '(' + v.id + ')')
+                    print(f'\t{i+1}: ({v.uid}) \033[92m{v.title}\033[0m via {v.queueby} ({v.id})')
 
         except (EOFError, KeyboardInterrupt):
             stop()

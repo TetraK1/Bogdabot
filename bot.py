@@ -26,9 +26,10 @@ class Bot:
         self.events = {}
         self.userlist = Userlist(self)
         self.playlist = Playlist(self)
-        self.db = None
-        self.discord = None
         self.chat_commands = ChatCommands(self)
+
+        self.modules = {}
+        self.discord = None
         #start_time stores when the bot connected to the room, so we can know
         #which chat messages are old and shouldn't be processed
         self.start_time = None
@@ -62,16 +63,6 @@ class Bot:
     async def send_pm(self, to, msg):
         data = {'to': to, 'msg':msg, 'meta':{}}
         await self.socket.emit('pm', data)
-
-    async def add_db(self, username, password, database, host):
-        botdb = db.PostgresBotDB(self)
-        await botdb.start(username, password, database, host)
-        self.db = botdb
-
-    async def add_discord(self, token):
-        dc = DiscordClient(self)
-        await dc.start(token)
-        self.discord = dc
 
     def write_state(self):
         self.logger.debug('Writing state')

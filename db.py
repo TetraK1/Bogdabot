@@ -60,3 +60,8 @@ class PostgresBotDB:
         async with self.pool.acquire() as connection:
             async with connection.transaction():
                 await connection.execute('INSERT INTO events VALUES($1, $2, $3)', timestamp, event, data)
+
+async def init(bot, config_file):
+    config = config_file['modules']['database']
+    bot.modules['database'] = PostgresBotDB(bot)
+    await bot.modules['database'].start(config['username'], config['password'], config['database'], config['host'])

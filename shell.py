@@ -13,8 +13,8 @@ def getplaylist(bot, text):
         print('\t' + str(i) + ':', v.title, '(' + v.id + ')')
 
 def say(bot, text):
-    if result.split(' ')[0] == 'say':
-        loop.create_task(bot.send_chat_message(' '.join(result.split(' ')[1:])))
+    if text.split(' ')[0] == 'say':
+        loop.create_task(bot.send_chat_message(' '.join(text.split(' ')[1:])))
 
 commands = {
     'exit': stop,
@@ -30,9 +30,10 @@ async def interactive_shell(bot, loop):
     while True:
         try:
             result = await session.prompt_async(set_exception_handler=False)
+
             command = result.split(' ')[0]
             logger.info(f'Running command "{result}"')
-            if result in commands: commands[command](bot, result)
+            if command in commands: commands[command](bot, result)
 
         except (EOFError, KeyboardInterrupt):
             loop.stop()

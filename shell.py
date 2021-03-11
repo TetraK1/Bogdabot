@@ -2,12 +2,22 @@ import asyncio
 import logging
 import prompt_toolkit
 
-async def interactive_shell(bot, loop):
+def stop(bot):
+    tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+    for t in tasks: t.cancel()
+    raise EOFError
 
-    def stop():
-        tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
-        for t in tasks: t.cancel()
-        loop.stop()
+def getplaylist(bot):
+    print('Playlist:')
+    for i, v in enumerate(bot.playlist.videos):
+        print('\t' + str(i) + ':', v.title, '(' + v.id + ')')
+
+commands = {
+    'exit': stop,
+    'getplaylist': getplaylist,
+}
+
+async def interactive_shell(bot, loop):
 
     logger = logging.getLogger('cmd')
     session = prompt_toolkit.shortcuts.PromptSession('cmd: ')
@@ -16,15 +26,8 @@ async def interactive_shell(bot, loop):
         try:
             result = await session.prompt_async(set_exception_handler=False)
             logger.info(f'Running command "{result}"')
-            if result == 'exit':
-                stop()
-                break
-
-            if result == 'getplaylist':
-                print('Playlist:')
-                for i, v in enumerate(bot.playlist.videos):
-                    print('\t' + str(i) + ':', v.title, '(' + v.id + ')')
+            if result in commands: commands[result](bot)
 
         except (EOFError, KeyboardInterrupt):
-            stop()
+            loop.stop()
             break

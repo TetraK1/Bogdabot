@@ -45,6 +45,5 @@ if __name__ == '__main__':
             with open('config.json') as f: CONFIG = yaml.safe_load(f.read())
         logger.warn('Config.json should be moved to config.yml')
 
-        loop.create_task(shell.interactive_shell(bot, loop))
         loop.create_task(main())
         loop.run_forever()

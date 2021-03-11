@@ -36,10 +36,13 @@ async def interactive_shell():
                 stop()
                 break
 
+            if result.split(' ')[0] == 'say':
+                loop.create_task(bot.send_chat_message(' '.join(result.split(' ')[1:])))
+
             if result == 'getplaylist':
                 print('Playlist:')
                 for i, v in enumerate(bot.playlist.videos):
-                    print('\t' + str(i) + ':', v.title, '(' + v.id + ')')
+                    print(f'\t{i+1}: ({v.uid}) \033[92m{v.title}\033[0m via {v.queueby} ({v.id})')
 
         except (EOFError, KeyboardInterrupt):
             stop()
@@ -56,6 +59,7 @@ def get_room_server(main_server, room):
     with urllib.request.urlopen(url) as response:
         r = json.loads(response.read())
     return r['servers'][0]['url']
+    #return 'https://node0.cytube.xyz'
 
 async def main():
     logger.info(f'Retrieving channel server from {CONFIG["server"]}')

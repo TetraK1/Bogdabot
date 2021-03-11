@@ -14,7 +14,7 @@ def getplaylist(bot, text):
 
 def say(bot, text):
     if text.split(' ')[0] == 'say':
-        loop.create_task(bot.send_chat_message(' '.join(text.split(' ')[1:])))
+        asyncio.create_task(bot.send_chat_message(' '.join(text.split(' ')[1:])))
 
 commands = {
     'exit': stop,

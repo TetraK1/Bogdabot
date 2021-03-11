@@ -10,7 +10,7 @@ def stop(bot, text):
 def getplaylist(bot, text):
     print('Playlist:')
     for i, v in enumerate(bot.playlist.videos):
-        print('\t' + str(i) + ':', v.title, '(' + v.id + ')')
+        print(f'\t{i+1}: ({v.uid}) \033[92m{v.title}\033[0m via {v.queueby} ({v.id})')
 
 def say(bot, text):
     if text.split(' ')[0] == 'say':

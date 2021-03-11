@@ -21,7 +21,7 @@ logger = logging.getLogger()
 
 bot = None
 
-async def main():
+async def start():
     logger.info(f'Retrieving channel server from {CONFIG["server"]}')
     room_server = await loop.run_in_executor(None, utils.get_room_server, CONFIG['server'], CONFIG['channel'])
     logger.info(f'Room {CONFIG["channel"]} on server {room_server}')
@@ -32,8 +32,12 @@ async def main():
     await discordbot.init(bot, CONFIG)
     
     await bot.start()
-    asyncio.create_task(bot.socket.wait())
     asyncio.create_task(shell.interactive_shell(bot, loop))
+    while True:
+        await bot.socket.wait()
+        logger.error("Disconnected from server, reconnecting in 5 seconds")
+        await asyncio.sleep(5)
+        await bot.start()
 
 if __name__ == '__main__':
     with prompt_toolkit.patch_stdout.patch_stdout():

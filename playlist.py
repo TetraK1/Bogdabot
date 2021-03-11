@@ -24,7 +24,7 @@ class Playlist:
         self.bot.socket.on('playlist', self.on_playlist)
         self.bot.socket.on('queue', self.on_queue)
         self.bot.socket.on('delete', self.on_delete)
-        self.bot.socket.on('moveVide', self.on_moveVideo)
+        self.bot.socket.on('moveVideo', self.on_moveVideo)
         self.logger = logging.getLogger(__name__)
 
     def load_from_data(self, data):
@@ -47,7 +47,7 @@ class Playlist:
             if video.uid == uid:
                 return video
 
-    def on_playlist(self, data): 
+    def on_playlist(self, data):
         return self.load_from_data(data)
 
     def on_queue(self, data):
@@ -66,10 +66,12 @@ class Playlist:
         self.logger.debug(f'Playlist is {len(self.videos)} long')
 
     def on_moveVideo(self, data):
+        self.logger.debug(f'on_moveVideo triggered {data}')
         video = self.get_by_uid(data['from'])
         after_video = self.get_by_uid(data['after'])
         old_index = self.videos.index(video)
         new_index = self.videos.index(after_video) + 1
+        self.logger.debug(f'after_video:{after_video}, old_index:{old_index}, new_index:{new_index}')
         self.videos.remove(video)
         self.videos.insert(new_index, video)
         self.logger.info(f'"{video.title}" moved from {old_index} to {new_index}')

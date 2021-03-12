@@ -21,7 +21,7 @@ def say(bot, text):
 
 def command_help(bot, text):
     command_names = sorted(commands.keys())
-    output = 'Available commands:' + '\n\t' + '\n\t'.join(sommand_names)
+    output = 'Available commands:' + '\n\t' + '\n\t'.join(command_names)
     print(output)
 
 commands = {
@@ -42,8 +42,11 @@ async def interactive_shell(bot, loop):
 
             command = result.split(' ')[0]
             logger.info(f'Running command "{result}"')
-            if command in commands: 
-                commands[command](bot, result)
+            if command in commands:
+                try:
+                    commands[command](bot, result)
+                except Exception as e:
+                    logger.error(f'Command error:\n{e}')
             else:
                 logger.info(f'Command "{command}" not recognised')
 

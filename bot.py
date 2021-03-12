@@ -20,6 +20,7 @@ class Bot:
             with open('state.json') as f: self.state = json.loads(f.read())
         except: self.state = {}
         self.logger = logging.getLogger(__name__)
+        self.chat_logger = logging.getLogger('chat')
         #socket should probably be split out into a subclass to make the
         #trigger patching in db easier and whatever else
         self.socket = botsocket.AsyncClient()
@@ -42,6 +43,7 @@ class Bot:
         await self.send_chat_message('Now handling commands')
         self.start_time = dt.datetime.now()
         self.logger.info('Bot started')
+        self.socket.on('chatMsg', on_chatMsg)
 
     async def connect(self, server):
         self.logger.info('Connecting to ' + server)
@@ -68,3 +70,6 @@ class Bot:
         self.logger.debug('Writing state')
         text = json.dumps(self.state, indent=4)
         with open('state.json', 'w') as f: f.write(text)
+
+    async def on_chatMsg(self, data):
+        self.chat_logger.info(f"{data['username']}: {data['msg']}")

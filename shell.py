@@ -19,10 +19,16 @@ def say(bot, text):
     command, text = text
     asyncio.create_task(bot.send_chat_message(text))
 
+def command_help(bot, text):
+    command_names = sorted(commands.keys())
+    output = 'Available commands:' + '\n\t' + '\n\t'.join(sommand_names)
+    print(output)
+
 commands = {
     'exit': stop,
     'getplaylist': getplaylist,
     'say': say,
+    'help': command_help,
 }
 
 async def interactive_shell(bot, loop):

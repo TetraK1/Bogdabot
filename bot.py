@@ -43,7 +43,7 @@ class Bot:
         await self.send_chat_message('Now handling commands')
         self.start_time = dt.datetime.now()
         self.logger.info('Bot started')
-        self.socket.on('chatMsg', on_chatMsg)
+        self.socket.on('chatMsg', self.on_chatMsg)
 
     async def connect(self, server):
         self.logger.info('Connecting to ' + server)

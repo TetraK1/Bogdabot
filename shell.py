@@ -8,13 +8,16 @@ def stop(bot, text):
     raise EOFError
 
 def getplaylist(bot, text):
-    print('Playlist:')
+    output = 'Playlist:\n'
     for i, v in enumerate(bot.playlist.videos):
-        print(f'\t{i+1}: ({v.uid}) \033[92m{v.title}\033[0m via {v.queueby} ({v.id})')
+        output += f'\t{i+1}: ({v.uid}) \033[92m{v.title}\033[0m via {v.queueby} ({v.id})\n'
+    print(output)
 
 def say(bot, text):
-    if text.split(' ')[0] == 'say':
-        asyncio.create_task(bot.send_chat_message(' '.join(text.split(' ')[1:])))
+    text = text.split(' ', 1)
+    if len(text) < 2: return
+    command, text = text
+    asyncio.create_task(bot.send_chat_message(text))
 
 commands = {
     'exit': stop,
@@ -33,7 +36,10 @@ async def interactive_shell(bot, loop):
 
             command = result.split(' ')[0]
             logger.info(f'Running command "{result}"')
-            if command in commands: commands[command](bot, result)
+            if command in commands: 
+                commands[command](bot, result)
+            else:
+                logger.info(f'Command "{command}" not recognised')
 
         except (EOFError, KeyboardInterrupt):
             loop.stop()

@@ -18,7 +18,8 @@ class Bot:
         self.password = password
         try: 
             with open('state.json') as f: self.state = json.loads(f.read())
-        except: self.state = {}
+        except: 
+            self.state = {}
         self.logger = logging.getLogger(__name__)
         self.chat_logger = logging.getLogger('chat')
         #socket should probably be split out into a subclass to make the

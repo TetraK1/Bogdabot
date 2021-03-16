@@ -1,3 +1,6 @@
+state.json
+extras/
+
 .vscode
 bot.db
 config.yml

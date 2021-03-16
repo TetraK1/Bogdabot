@@ -28,8 +28,11 @@ async def start():
     global bot
     bot = Bot(room_server, CONFIG['channel'], CONFIG['username'], CONFIG['password'])
 
-    await db.init(bot, CONFIG)
-    await discordbot.init(bot, CONFIG)
+    if 'modules' in CONFIG:
+        if 'database' in CONFIG['modules']:
+            await db.init(bot, CONFIG)
+        if 'discord' in CONFIG['modules']:
+            await discordbot.init(bot, CONFIG)
     
     await bot.start()
     asyncio.create_task(shell.interactive_shell(bot, loop))

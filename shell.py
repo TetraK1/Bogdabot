@@ -1,11 +1,14 @@
 import asyncio
 import logging
+import json
 import prompt_toolkit
+
+logger = logging.getLogger('cmd')
 
 def stop(bot, text):
     tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
     for t in tasks: t.cancel()
-    raise EOFError
+    raise SystemExit()
 
 def getplaylist(bot, text):
     output = 'Playlist:\n'
@@ -24,16 +27,27 @@ def command_help(bot, text):
     output = 'Available commands:' + '\n\t' + '\n\t'.join(command_names)
     print(output)
 
+def showstate(bot, text):
+    state = bot.state
+    args = text.split(' ')[1:]
+    for arg in args:
+        try:
+            state = state[arg]
+        except KeyError:
+            logger.error(f'Key "{arg}" not found')
+            return
+    output = 'Bot state:\n' + json.dumps(state, indent=2) + '\n'
+    logger.info(output)
+
 commands = {
     'exit': stop,
     'getplaylist': getplaylist,
     'say': say,
     'help': command_help,
+    'showstate': showstate,
 }
 
 async def interactive_shell(bot, loop):
-
-    logger = logging.getLogger('cmd')
     session = prompt_toolkit.shortcuts.PromptSession('cmd: ')
 
     while True:
@@ -50,6 +64,6 @@ async def interactive_shell(bot, loop):
             else:
                 logger.info(f'Command "{command}" not recognised')
 
-        except (EOFError, KeyboardInterrupt):
+        except (SystemExit, KeyboardInterrupt):
             loop.stop()
             break

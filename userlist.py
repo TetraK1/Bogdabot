@@ -30,7 +30,16 @@ class Userlist:
         self.bot.socket.on('userLeave', self.on_user_leave)
         self.bot.socket.on('addUser', self.on_add_user)
 
-    def __getitem__(self, key): return self.users[key]
+    def get_proper_case_name(self, name):
+        name = name.lower()
+        for case_name in self.users:
+            if name == case_name.lower():
+                return case_name
+        raise KeyError("User not found in userlist")
+
+    def __getitem__(self, name): 
+        name = self.get_proper_case_name(name)
+        return self.users[name]
 
     def load_from_userlist(self, data):
         logger.info('Loading userlist')

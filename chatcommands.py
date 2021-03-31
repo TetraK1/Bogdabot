@@ -2,6 +2,8 @@ import asyncio
 import random
 import datetime as dt
 import logging
+from matplotlib.colors import to_hex
+import os
 import re
 
 logger = logging.getLogger('cc')
@@ -147,11 +149,11 @@ class KarmaController:
             self.bot.state['cc']['karma'] = {}
             karma = self.bot.state['cc']['karma']
 
-        self.save()
         return karma
 
     def save(self):
         self.bot.write_state()
+        self.write_css()
 
     def get_user_votes(self, name: str):
         if name not in self.karma:
@@ -187,6 +189,31 @@ class KarmaController:
             if name == tally_name:
                 return i + 1
         raise KeyError()
+
+    def write_css(self):
+        try:
+            os.makedirs('css/')
+        except FileExistsError:
+            pass
+
+        with open('css/karma.css', 'w') as f:
+            karmas = self.get_all_karma()
+            max_karma = max(karmas.values())
+            min_karma = min(karmas.values())
+
+            for i, (name, karma) in enumerate(karmas.items()):
+                if karma > 0:
+                    green = karma / max_karma
+                    colour = to_hex([1-green, 1,  1-green])
+                elif karma < 0:
+                    red = karma / min_karma
+                    colour = to_hex([1, 1 - red, 1 - red])
+                else:
+                    colour = '#ffffff'
+                
+                f.write(f'.chat-msg-{name} .username, .userlist-{name}{{\n')
+                f.write(f'color:{colour} !important; font-style:normal !important}}\n')
+                f.write('\n')
         
 
 class Upvote(ChatCommand):

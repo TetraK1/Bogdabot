@@ -1,12 +1,13 @@
 server: https://cytu.be
 username: 
 password: 
-channel: 
-database:
-  username: 
-  password: 
-  database: 
-  host: 
-discord:
-  token: 
-  deleted-vids-channel: 
+channel:
+modules:
+  database:
+    username: 
+    password: 
+    database: 
+    host: 
+  discord:
+    token: 
+    deleted-vids-channel: 

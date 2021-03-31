@@ -300,15 +300,15 @@ class KarmaRanking(ChatCommand):
         
         await self.bot.send_chat_message(f'Karma rankings:')
         for i, (name, karma) in enumerate(tallies[:3]):
-            await self.bot.send_chat_message(f'{i+1}. {name}: {karma} karma')
-        await self.bot.send_chat_message(f'{len(tallies)}. {tallies[-1][0]}: {tallies[-1][1]} karma')
+            await self.bot.send_chat_message(f'{i+1}. {name} ({karma} karma)')
+        await self.bot.send_chat_message(f'Most hated user: {tallies[-1][0]} ({tallies[-1][1]} karma)')
         
 
     async def one_user(self, name):
         try:
             rank = kc.get_user_ranking(name)
         except KeyError:
-            await self.bot.send_chat_message(f'{name} has no karma nad has no standing.')
+            await self.bot.send_chat_message(f'{name} has no karma and has no standing.')
             return
 
         await self.bot.send_chat_message(f'{name} ranks at place {rank}')

@@ -18,7 +18,7 @@ class Bot:
         self.password = password
         try: 
             with open('state.json') as f: self.state = json.loads(f.read())
-        except: 
+        except FileNotFoundError: 
             self.state = {}
         self.logger = logging.getLogger(__name__)
         self.chat_logger = logging.getLogger('chat')

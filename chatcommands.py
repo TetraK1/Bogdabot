@@ -18,6 +18,7 @@ class ChatCommands:
             Upvote(bot),
             Downvote(bot),
             GetKarma(bot),
+            KarmaRanking(bot),
         ]
         
         self.bot.socket.on('chatMsg', self.on_chat_message)
@@ -75,7 +76,7 @@ class ChatCommand:
         self.last_uses[user] = dt.datetime.now()
         self.logger.debug(str(self.last_uses))
 
-    async def call(self, user: str, args: list[str]):
+    async def call(self, user: str, args):
         if not self.check(user, args): return
         try:
             await self.action(user, args)
@@ -83,7 +84,7 @@ class ChatCommand:
         except NoCooldownException:
             pass
 
-    async def action(self, user: str, args: list[str]):
+    async def action(self, user: str, args):
         pass
 
 class Roll(ChatCommand):
@@ -120,7 +121,7 @@ class Roll(ChatCommand):
 
         if consec > 1: 
             msg = f'[3d]{user} rolled {self.get_names[consec]}: {result}!! [/3d] /go'
-        elif random.random() < 0.1:
+        elif random.random() < 0.01:
             msg = f'[3d]{user} rolled SINGLES: {result}!! [/3d] /feelsmeh /mehfeels'
         else:
             msg = f'{user} rolled: {result}'
@@ -131,19 +132,25 @@ class Roll(ChatCommand):
 class KarmaController:
     def __init__(self, bot):
         self.bot = bot
-        self.karma = {}
-        self.load()
 
-    def load(self):
-        try: cc = self.bot.state['cc']
-        except KeyError: self.bot.state['cc'] = {}
-        try: karma = cc['karma']
-        except KeyError: self.bot.state['cc']['karma'] = {}
-        self.bot.write_state()
-        return self.bot.state['cc']['karma']
+    @property
+    def karma(self):
+        try: 
+            cc = self.bot.state['cc']
+        except KeyError:
+            self.bot.state['cc'] = {}
+            cc = self.bot.state['cc']
+
+        try: 
+            karma = cc['karma']
+        except KeyError: 
+            self.bot.state['cc']['karma'] = {}
+            karma = self.bot.state['cc']['karma']
+
+        self.save()
+        return karma
 
     def save(self):
-        self.bot.state['cc']['karma'] = self.karma
         self.bot.write_state()
 
     def get_user_votes(self, name: str):
@@ -165,20 +172,43 @@ class KarmaController:
         self.karma[target_name][agent_name] = vote
         self.save()
 
+    def get_all_karma(self):
+        '''Return karma tallies, keyed by name, ordered by tally'''
+        tallies = {}
+        for name in self.karma:
+            tallies[name] = self.get_user_karma(name)
+        tallies = {k: v for k, v in sorted(tallies.items(), key=lambda item:item[1])[::-1]}
+        return tallies
+
+    def get_user_ranking(self, name):
+        '''Throws KeyError if name not found.  Case-insensitive.'''
+        tallies = self.get_all_karma()
+        for i, tally_name in enumerate(tallies):
+            if name == tally_name:
+                return i + 1
+        raise KeyError()
+        
+
 class Upvote(ChatCommand):
     command_name = 'upvote'
     min_rank = 1
 
     async def action(self, user, args):
-        try: target_name = self.bot.userlist[args[0]].name
+        try: 
+            target_name = self.bot.userlist[args[0]].name
         except KeyError:
             await self.bot.send_chat_message("That user is not online")
             raise NoCooldownException()
+
         try:
             if kc.get_user_vote(target_name, user) == True:
                 await self.bot.send_chat_message("You've already upvoted that user.")
                 raise NoCooldownException()
         except KeyError: pass
+
+        if user.lower() == target_name.lower():
+            await self.bot.send_chat_message("You can't upvote yourself")
+            raise NoCooldownException()
 
         kc.set_vote(True, user, target_name)
         new_karma = kc.get_user_karma(target_name)
@@ -191,7 +221,7 @@ class Downvote(ChatCommand):
     async def action(self, user, args):
         try: target_name = self.bot.userlist[args[0]].name
         except KeyError:
-            await self.bot.send_chat_message("That user is not online")
+            await self.bot.send_chat_message("That user is not online.")
             raise NoCooldownException()
 
         try:
@@ -202,7 +232,11 @@ class Downvote(ChatCommand):
 
         kc.set_vote(False, user, target_name)
         new_karma = kc.get_user_karma(target_name)
-        await self.bot.send_chat_message(f"{user} downvoted {target_name}, who now has {new_karma} karma")
+
+        if user.lower() == target_name.lower():
+            await self.bot.send_chat_message(f"{user} downvoted themselves, what a dunce!")
+        else:
+            await self.bot.send_chat_message(f"{user} downvoted {target_name}, who now has {new_karma} karma.")
 
 class GetKarma(ChatCommand):
     command_name = 'karma'
@@ -222,3 +256,32 @@ class GetKarma(ChatCommand):
         await self.bot.send_chat_message(f"{name} has {user_karma} karma.")
     
 
+class KarmaRanking(ChatCommand):
+    command_name = 'ranking'
+    min_rank = 1
+
+    async def action(self, user, args):
+        if len(args) == 0:
+            await self.all_users()
+        else:
+            await self.one_user(args[0])
+
+    async def all_users(self):
+        tallies = tuple(kc.get_all_karma().items())
+        if len(tallies) < 1: 
+            return
+        
+        await self.bot.send_chat_message(f'Karma rankings:')
+        for i, (name, karma) in enumerate(tallies[:3]):
+            await self.bot.send_chat_message(f'{i+1}. {name}: {karma} karma')
+        await self.bot.send_chat_message(f'{len(tallies)}. {tallies[-1][0]}: {tallies[-1][1]} karma')
+        
+
+    async def one_user(self, name):
+        try:
+            rank = kc.get_user_ranking(name)
+        except KeyError:
+            await self.bot.send_chat_message(f'{name} has no karma nad has no standing.')
+            return
+
+        await self.bot.send_chat_message(f'{name} ranks at place {rank}')

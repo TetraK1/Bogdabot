@@ -47,10 +47,10 @@ class Playlist:
             if video.uid == uid:
                 return video
 
-    def on_playlist(self, data):
+    async def on_playlist(self, data):
         return self.load_from_data(data)
 
-    def on_queue(self, data):
+    async def on_queue(self, data):
         '''{"item":{"media":{"id":"qXD9HnrNrvk","title":"Expert Wasted Entire Life Studying Anteaters","seconds":175,"duration":"02:55","type":"yt","meta":{}},"uid":16345,"temp":true,"queueby":"AsKdf"},"after":16344}'''
         new_video = Video(data=data['item'])
         after_video = self.get_by_uid(data['after'])
@@ -59,13 +59,13 @@ class Playlist:
         self.logger.info(f'Video "{new_video.title}" added to {video_index}')
         self.logger.debug('Playlist is ' + str(len(self.videos)) + ' long')
     
-    def on_delete(self, data):
+    async def on_delete(self, data):
         video = self.get_by_uid(data['uid'])
         self.videos.remove(video)
         self.logger.info(f'Video "{video.title}" deleted')
         self.logger.debug(f'Playlist is {len(self.videos)} long')
 
-    def on_moveVideo(self, data):
+    async def on_moveVideo(self, data):
         self.logger.debug(f'on_moveVideo triggered {data}')
         video = self.get_by_uid(data['from'])
         after_video = self.get_by_uid(data['after'])

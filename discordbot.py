@@ -38,7 +38,7 @@ class DiscordClient(discord.Client):
     async def handle_chatMsg(self, data):
         #on bot event 'chatMsg'
         if not self.is_ready(): return
-        if 'db' not in self.bot.modules or not self.bot.modules['db']: return
+        if 'database' not in self.bot.modules or not self.bot.modules['database']: return
         if not self.del_vids_channel: return
         if data['msg'].split(' ', 1)[0] != 'deleted': return
         try:
@@ -47,8 +47,7 @@ class DiscordClient(discord.Client):
         if not self.bot.userlist[data['username']].rank >= 2: return
 
         title = data['msg'].split('"', 1)[1].rsplit('"', 1)[0]
-
-        async with self.bot.db.pool.acquire() as connection:
+        async with self.bot.modules['database'].pool.acquire() as connection:
             async with connection.transaction():
                 db_result = await connection.fetch("""select videos.video_type, videos.video_id, videos.video_title, video_adds.from_username
                     from videos
@@ -72,6 +71,8 @@ class DiscordClient(discord.Client):
 
         if db_result['video_type'] == 'yt':
             embed.description = 'https://youtu.be/' + db_result['video_id']
+        else:
+            embed.description = db_result['video_id']
 
         await self.del_vids_channel.send(embed=embed)
 

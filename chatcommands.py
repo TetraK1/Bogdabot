@@ -239,7 +239,7 @@ class Upvote(ChatCommand):
 
         kc.set_vote(True, user, target_name)
         new_karma = kc.get_user_karma(target_name)
-        await self.bot.send_chat_message(f"{user} upvoted {target_name}, who now has {new_karma} karma")
+        await self.bot.send_chat_message(f"{user} upvoted {target_name}, whomst've now has {new_karma} karma")
 
 class Downvote(ChatCommand):
     command_name = 'downvote'

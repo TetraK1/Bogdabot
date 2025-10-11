@@ -45,6 +45,7 @@ class Bot:
         self.start_time = dt.datetime.now()
         self.logger.info('Bot started')
         self.socket.on('chatMsg', self.on_chatMsg)
+        await self.send_chat_message("Bogdabot online")
 
     async def connect(self, server):
         self.logger.info('Connecting to ' + server)

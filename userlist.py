@@ -41,17 +41,17 @@ class Userlist:
         name = self.get_proper_case_name(name)
         return self.users[name]
 
-    def load_from_userlist(self, data):
+    async def load_from_userlist(self, data):
         logger.info('Loading userlist')
         for user_data in data:
             user = User.create_from_data(user_data)
             self.users[user.name] = user
 
-    def on_user_leave(self, data):
+    async def on_user_leave(self, data):
         logger.info(data['name'] + ' left')
         del self.users[data['name']]
 
-    def on_add_user(self, data):
+    async def on_add_user(self, data):
         logger.info(data['name'] + ' joined')
         user = User.create_from_data(data)
         self.users[user.name] = user

@@ -2,6 +2,7 @@ import asyncio
 import logging
 import json
 import prompt_toolkit
+import chatcommands
 
 logger = logging.getLogger('cmd')
 
@@ -39,12 +40,18 @@ def showstate(bot, text):
     output = 'Bot state:\n' + json.dumps(state, indent=2) + '\n'
     logger.info(output)
 
+def ai_status(bot, text):
+    print(f"Prompt:", chatcommands.ai_controller.prompt)
+    print(f"Conversation length:", chatcommands.ai_controller.conversation_length)
+    print(f"Conversation ID:", chatcommands.ai_controller.conversation.id)
+
 commands = {
     'exit': stop,
     'getplaylist': getplaylist,
     'say': say,
     'help': command_help,
     'showstate': showstate,
+    'showaistate': ai_status
 }
 
 async def interactive_shell(bot, loop):

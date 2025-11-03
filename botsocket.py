@@ -11,7 +11,7 @@ class AsyncClient:
     '''
     def __init__(self, *args, **kwargs):
         self.logger = logger
-        self.siosock = socketio.AsyncClient()
+        self.siosock = socketio.AsyncClient(*args, **kwargs)
 
         self.ns = socketio.AsyncClientNamespace('/')
         self.ns.trigger_event = self.trigger_event

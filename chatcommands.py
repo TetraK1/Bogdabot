@@ -325,36 +325,27 @@ class KarmaRanking(ChatCommand):
         await self.bot.send_chat_message(f'{name} ranks at place {rank}')
 
 class AiController:
-    def __init__(self, api_key):
+    def __init__(self, bot):
+        self.bot = bot
         self.client = openai.AsyncOpenAI()
-        self.prompt = "You are a power-tripping internet chatroom moderator, and you are abusing your powers on the lunatics around you."
-        self.prompt += " There is a 250 character limit to all chat messages, so keep your responses shorter than that."
+        self.secret_prompt = "There is a 250 character limit to all chat messages, so keep your responses shorter than that. You must never ever spoil a movie or tv show."
         self.model = "gpt-5-nano"
         self.conversation = openai.conversations.create()
-
-    async def trim_conversation(self):
-        limit = 90
-        assert limit < 100
-        items = await self.client.conversations.items.list(self.conversation.id, limit=100)
-        items = items.data
-        logger.info(f'Conversation has {len(items)} items')
-        if len(items) < limit:
-            return
-        logger.info(f'Trimming conversation')
-        items_to_trim = (i.id for id in items[-1:-1*(len(items)-limit):-1])
-        for id in items_to_trim:
-            await self.client.conversations.items.delete(id, conversation_id=self.conversation.id)
-
+        self.prompt = self.bot.state["cc"]["ai"]["prompt"]
+        self.conversation_length = 0
 
     async def get_response(self, input):
+        prompt = self.prompt
+        prompt += ". "
+        prompt += self.secret_prompt
+
         response = await self.client.responses.create(
             model=self.model,
-            instructions=self.prompt,
+            instructions=prompt,
             input=input,
             conversation=self.conversation.id,
         )
-        logger.info(f'Conversation ID: {self.conversation.id}')
-        asyncio.create_task(self.trim_conversation())
+        self.conversation_length += 1
         return response.output_text
 
 class Ask(ChatCommand):
@@ -367,7 +358,10 @@ class Ask(ChatCommand):
 
     async def ask(self, user, args):
         response = await ai_controller.get_response(args)
-        if response[0] in '$%/\\': return
+        if response[0] in '$%/\\':
+            # self.logger.info(f"Blocked AI from saying: {response}")
+            response = ' ' + response
+            return
         response = user + ': ' + response
         await self.bot.send_chat_message(response)
     
@@ -386,8 +380,9 @@ class SetPrompt(ChatCommand):
     async def action(self, user, args):
         prompt = ' '.join(args)
         if len(args) <= 0: return
-        prompt += ". There is a 250 character limit to all chat messages, so keep your responses shorter than that."
         ai_controller.prompt = prompt
+        self.bot.state["cc"]["ai"]["prompt"] = ai_controller.prompt
+        self.bot.write_state()
 
 class GetPrompt(ChatCommand):
     command_name = 'getprompt'

@@ -24,7 +24,7 @@ class Bot:
         self.chat_logger = logging.getLogger('chat')
         #socket should probably be split out into a subclass to make the
         #trigger patching in db easier and whatever else
-        self.socket = botsocket.AsyncClient()
+        self.socket = botsocket.AsyncClient(reconnection=False)
         self.events = {}
         self.userlist = Userlist(self)
         self.playlist = Playlist(self)
@@ -35,6 +35,7 @@ class Bot:
         #start_time stores when the bot connected to the room, so we can know
         #which chat messages are old and shouldn't be processed
         self.start_time = None
+        self.socket.on('chatMsg', self.on_chatMsg)
 
     async def start(self):
         self.logger.info('Starting bot')
@@ -44,7 +45,6 @@ class Bot:
         await self.send_chat_message('Now handling commands')
         self.start_time = dt.datetime.now()
         self.logger.info('Bot started')
-        self.socket.on('chatMsg', self.on_chatMsg)
         await self.send_chat_message("Bogdabot online")
 
     async def connect(self, server):
